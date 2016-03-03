@@ -14,10 +14,11 @@ object Run {
     compactPD.transform.transformType match {
       case TransformType.Map => handleMap(compactPD, sc)
       case TransformType.Parallelize => handleParallelize(compactPD, sc)
+      case TransformType.Filter => handleFilter(compactPD, sc)
     }
   }
 
-  def handleMap(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  private def handleMap(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -26,7 +27,16 @@ object Run {
     prev.map(f)
   }
 
-  def handleParallelize(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  private def handleFilter(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+    val rddDepends = compactPD.parents.map(getRDD(_,sc))
+    assert(rddDepends.size == 1)
+
+    val f = stringToObj[Any => Boolean](compactPD.transform.encodedTransform)
+    val prev = rddDepends.head
+    prev.filter(f)
+  }
+
+  private def handleParallelize(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
     val seq = stringToObj[Seq[Any]](compactPD.transform.encodedTransform)
     sc.parallelize(seq)
   }

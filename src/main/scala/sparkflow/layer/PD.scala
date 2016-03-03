@@ -15,4 +15,8 @@ abstract class PD[T: ClassTag](deps: Seq[PD[_]]) extends Serializable {
     new MapPD[U, T](this, f)
   }
 
+  def filter(f: T => Boolean): PD[T] = {
+    new FilterPD[T](this, f)
+  }
+
 }

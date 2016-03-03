@@ -22,7 +22,7 @@ object Formats {
   case class Transform(transformType: TransformType.Value, encodedTransform: String)
 
   object TransformType extends Enumeration{
-    val Map, Parallelize = Value
+    val Parallelize, Map, Filter, FlatMap = Value
   }
 
   object CompactPD{

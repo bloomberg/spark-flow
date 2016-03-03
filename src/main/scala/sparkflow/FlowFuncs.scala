@@ -1,6 +1,6 @@
 package sparkflow
 
-import sparkflow.layer.ParallelCollectionPD
+import sparkflow.layer.{PD, ParallelCollectionPD}
 
 import scala.reflect.ClassTag
 
@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
   */
 object FlowFuncs {
 
-  def parallelize[T:ClassTag](seq: Seq[T]) = {
+  def parallelize[T:ClassTag](seq: Seq[T]): PD[T] = {
     new ParallelCollectionPD(seq)
   }
 }
