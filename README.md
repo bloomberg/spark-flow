@@ -1,1 +1,3 @@
 # spark-flow
+
+It's not obvious to most users how to organize their spark code. This is an attempt at a design pattern library for spark that allows users to write their code in mostly the same way, but with a couple enforced assumptions such as the ability to serialize a spark plan to json and back. The Spark API is very close to a dataflow programming paradigm with a couple shortfalls. Hopefully we can close the gap and provide useful component abstractions so that people can organize their code and get some additional benefits. Among the potential benefits are features such as automatic checkpointing / caching, remote operation, and graphical display.
