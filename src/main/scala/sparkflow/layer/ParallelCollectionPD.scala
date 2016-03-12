@@ -1,7 +1,7 @@
 package sparkflow.layer
 
 import org.apache.spark.hax.SerializeUtil._
-import sparkflow.serialization.Formats.{CompactPD, TransformType, Transform}
+import sparkflow.serialization.Formats._
 
 import scala.reflect.ClassTag
 
@@ -10,9 +10,9 @@ import scala.reflect.ClassTag
   */
 class ParallelCollectionPD[T:ClassTag](val data: Seq[T]) extends PD[T](Nil) {
 
-  def toCompactPD() = {
+  def toSerializedPD() = {
     val transform = Transform(TransformType.Parallelize, objToString(data))
-    CompactPD(Nil, transform)
+    SerializedPD(Nil, transform)
   }
 
 }

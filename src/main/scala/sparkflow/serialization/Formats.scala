@@ -11,22 +11,21 @@ object Formats {
   implicit val formats = org.json4s.DefaultFormats +
     new EnumNameSerializer(TransformType)
 
-  case class CompactPD(parents: Seq[CompactPD], transform: Transform){
+  case class SerializedPD(parents: Seq[SerializedPD], transform: Transform){
 
-    override
-    def toString = write(this)
+    override def toString = write(this)
 
-    def fromString(s: String) = read[CompactPD](s)
+    def fromString(s: String) = read[SerializedPD](s)
   }
 
   case class Transform(transformType: TransformType.Value, encodedTransform: String)
 
   object TransformType extends Enumeration{
-    val Parallelize, Map, Filter, FlatMap = Value
+    val Parallelize, Map, Filter, FlatMap, RDDFunc = Value
   }
 
-  object CompactPD{
-    def fromString(s: String) = read[CompactPD](s)
+  object SerializedPD{
+    def fromString(s: String) = read[SerializedPD](s)
   }
 
 

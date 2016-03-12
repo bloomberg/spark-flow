@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.1" % "test" withSources(),
   "org.apache.spark" %% "spark-core" % SPARK_VERSION withSources(),
   "org.apache.spark" %% "spark-sql" % SPARK_VERSION withSources(),
+  "org.apache.spark" %% "spark-mllib" % SPARK_VERSION withSources(),
   "org.json4s" %% "json4s-jackson" % JSON4S_VERSION,
   "org.json4s" %% "json4s-ext" % JSON4S_VERSION,
   "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1"

@@ -1,7 +1,7 @@
 package sparkflow.layer
 
 import org.apache.spark.hax.SerializeUtil._
-import sparkflow.serialization.Formats.{CompactPD, TransformType, Transform}
+import sparkflow.serialization.Formats._
 
 import scala.reflect.ClassTag
 
@@ -10,9 +10,9 @@ import scala.reflect.ClassTag
   */
 class FilterPD[T:ClassTag](val prev: PD[T], f: T => Boolean) extends PD[T](Seq(prev)) {
 
-  def toCompactPD() = {
+  def toSerializedPD() = {
     val transform = Transform(TransformType.Filter, objToString(f))
-    CompactPD(Seq(prev.toCompactPD()), transform)
+    SerializedPD(Seq(prev.toSerializedPD()), transform)
   }
 
 }

@@ -2,7 +2,7 @@ package sparkflow.execute
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import sparkflow.serialization.Formats.{TransformType, CompactPD}
+import sparkflow.serialization.Formats.{TransformType, SerializedPD}
 import org.apache.spark.hax.SerializeUtil._
 
 /**
@@ -10,15 +10,16 @@ import org.apache.spark.hax.SerializeUtil._
   */
 object Run {
 
-  def getRDD(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  def getRDD(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
     compactPD.transform.transformType match {
       case TransformType.Map => handleMap(compactPD, sc)
       case TransformType.Parallelize => handleParallelize(compactPD, sc)
       case TransformType.Filter => handleFilter(compactPD, sc)
+      case TransformType.RDDFunc => handleRDDFunc(compactPD, sc)
     }
   }
 
-  private def handleMap(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  private def handleMap(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -27,7 +28,16 @@ object Run {
     prev.map(f)
   }
 
-  private def handleFilter(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  private def handleRDDFunc(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+    val rddDepends = compactPD.parents.map(getRDD(_,sc))
+    assert(rddDepends.size == 1)
+
+    val f = stringToObj[RDD[_] => RDD[_]](compactPD.transform.encodedTransform)
+    val prev = rddDepends.head
+    f(prev)
+  }
+
+  private def handleFilter(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -36,7 +46,7 @@ object Run {
     prev.filter(f)
   }
 
-  private def handleParallelize(compactPD: CompactPD, sc: SparkContext): RDD[_] = {
+  private def handleParallelize(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
     val seq = stringToObj[Seq[Any]](compactPD.transform.encodedTransform)
     sc.parallelize(seq)
   }
