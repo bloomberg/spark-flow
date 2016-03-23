@@ -2,11 +2,8 @@ package sparkflow.layer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import sparkflow.execute.Run.getRDD
-import sparkflow.serialization.Formats.SerializedDC
 
 import scala.reflect.{ClassTag, classTag}
-import scala.spores.Spore
 
 /**
   * DistributedCollection, analogous to RDD

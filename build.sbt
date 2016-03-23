@@ -16,7 +16,8 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-mllib" % SPARK_VERSION withSources(),
   "org.json4s" %% "json4s-jackson" % JSON4S_VERSION,
   "org.json4s" %% "json4s-ext" % JSON4S_VERSION,
-  "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1"
+  "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1",
+  "org.ow2.asm" % "asm" % "5.1" withSources()
 )
 
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
