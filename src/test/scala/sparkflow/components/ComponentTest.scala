@@ -3,7 +3,7 @@ package sparkflow.components
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.apache.spark.rdd.RDD
 import org.scalatest._
-import sparkflow.layer.PD
+import sparkflow.layer.DC
 import sparkflow.FlowFuncs._
 
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -19,12 +19,12 @@ class ComponentTest extends FunSuite with SharedSparkContext with ShouldMatchers
 
   test("basicComponent"){
 
-    case class InBundle(nums: PD[Int]) extends Bundle
-    case class OutBundle(lt5: PD[Int], gt5: PD[Int]) extends Bundle
+    case class InBundle(nums: DC[Int]) extends Bundle
+    case class OutBundle(lt5: DC[Int], gt5: DC[Int]) extends Bundle
 
     val bundle = InBundle(parallelize(1 to 10))
 
-    println(bundle.calcElements())
+//    println(bundle.calcElements())
 
     class TestComp(in: InBundle) extends Component[InBundle, OutBundle](in: InBundle){
 
@@ -37,8 +37,8 @@ class ComponentTest extends FunSuite with SharedSparkContext with ShouldMatchers
 
     val comp = new TestComp(bundle)
 
-    1 to 4 should contain theSameElementsAs comp.output.lt5.toRDD(sc).collect()
-    6 to 10 should contain theSameElementsAs comp.output.gt5.toRDD(sc).collect()
+    1 to 4 should contain theSameElementsAs comp.output.lt5.getRDD(sc).collect()
+    6 to 10 should contain theSameElementsAs comp.output.gt5.getRDD(sc).collect()
 
   }
 
@@ -54,34 +54,32 @@ class ComponentTest extends FunSuite with SharedSparkContext with ShouldMatchers
 
     // definitions
 
-    case class CorpusBundle(corpus: PD[(Long, Vector)]) extends Bundle
-
-    class CorpusGenerator() extends Component[Null, CorpusBundle](null){
-
-      def run() = {
-        val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
-        val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
-        CorpusBundle(corpus)
-      }
-
-    }
-
-    case class ModelOutput(ldaModel: LDAModel) extends Bundle
-
-    implicit def pdToRDD[T: ClassTag](pd: PD[T]): RDD[T] = pd.toRDD(sc)
-
-    class LDAComponent(corpusBundle: CorpusBundle) extends Component[CorpusBundle, ModelOutput](corpusBundle) {
-
-      def run() = {
-        ModelOutput(new LDA().setK(3).run(corpusBundle.corpus))
-      }
-
-    }
-
-    // top level execution
-      val corpusGenerator = new CorpusGenerator()
-      val lDAComponent = new LDAComponent(corpusGenerator.output)
-      println(lDAComponent.output.ldaModel.topicsMatrix)
+//    case class CorpusBundle(corpus: DC[(Long, Vector)]) extends Bundle
+//
+//    class CorpusGenerator() extends Component[Null, CorpusBundle](null){
+//
+//      def run() = {
+//        val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
+//        val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
+//        CorpusBundle(corpus)
+//      }
+//
+//    }
+//
+//    case class ModelOutput(ldaModel: LDAModel) extends Bundle
+//
+//    class LDAComponent(corpusBundle: CorpusBundle) extends Component[CorpusBundle, ModelOutput](corpusBundle) {
+//
+//      def run() = {
+//        ModelOutput(new LDA().setK(3).run(corpusBundle.corpus))
+//      }
+//
+//    }
+//
+//    // top level execution
+//      val corpusGenerator = new CorpusGenerator()
+//      val lDAComponent = new LDAComponent(corpusGenerator.output)
+//      println(lDAComponent.output.ldaModel.topicsMatrix)
     }
 
 }

@@ -2,7 +2,7 @@ package sparkflow.execute
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import sparkflow.serialization.Formats.{TransformType, SerializedPD}
+import sparkflow.serialization.Formats.{TransformType, SerializedDC}
 import org.apache.spark.hax.SerializeUtil._
 
 /**
@@ -10,7 +10,7 @@ import org.apache.spark.hax.SerializeUtil._
   */
 object Run {
 
-  def getRDD(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+  def getRDD(compactPD: SerializedDC, sc: SparkContext): RDD[_] = {
     compactPD.transform.transformType match {
       case TransformType.Map => handleMap(compactPD, sc)
       case TransformType.Parallelize => handleParallelize(compactPD, sc)
@@ -19,7 +19,7 @@ object Run {
     }
   }
 
-  private def handleMap(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+  private def handleMap(compactPD: SerializedDC, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -28,7 +28,7 @@ object Run {
     prev.map(f)
   }
 
-  private def handleRDDFunc(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+  private def handleRDDFunc(compactPD: SerializedDC, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -37,7 +37,7 @@ object Run {
     f(prev)
   }
 
-  private def handleFilter(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+  private def handleFilter(compactPD: SerializedDC, sc: SparkContext): RDD[_] = {
     val rddDepends = compactPD.parents.map(getRDD(_,sc))
     assert(rddDepends.size == 1)
 
@@ -46,7 +46,7 @@ object Run {
     prev.filter(f)
   }
 
-  private def handleParallelize(compactPD: SerializedPD, sc: SparkContext): RDD[_] = {
+  private def handleParallelize(compactPD: SerializedDC, sc: SparkContext): RDD[_] = {
     val seq = stringToObj[Seq[Any]](compactPD.transform.encodedTransform)
     sc.parallelize(seq)
   }
