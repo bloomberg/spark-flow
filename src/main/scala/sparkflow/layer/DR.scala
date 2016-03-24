@@ -7,14 +7,22 @@ import sparkflow.serialization.Hashing._
 import scala.reflect.ClassTag
 
 /**
-  * Created by ngoehausen on 3/23/16.
+  * Deferred Result
   */
-private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
+class DR[T:ClassTag,U:ClassTag]
 (val prev: DC[T],
- f: RDD[T] => RDD[U],
- hashTarget: AnyRef) extends DC[U](Seq(prev)) {
+ val f: RDD[T] => U) extends Dependency[U] {
 
-  def computeRDD(sc: SparkContext) = {
+  private var result: U = _
+
+  def getResult(sc: SparkContext) = {
+    if (result == null){
+      result = computeResult(sc)
+    }
+    result
+  }
+
+  private def computeResult(sc: SparkContext) = {
     f(prev.getRDD(sc))
   }
 
