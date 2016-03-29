@@ -1,6 +1,7 @@
 package sparkflow.serialization
 
 import org.scalatest.FunSuite
+import sparkflow._
 import sparkflow.serialization.Hashing._
 
 /**
@@ -14,5 +15,17 @@ class HashingTest extends FunSuite {
 
     println(hashClass(f))
     println(hashClass(g))
+  }
+
+  test("dcHashing"){
+    val numbers = parallelize(1 to 10)
+    val filtered = numbers.filter(_ < 6)
+    val doubled = filtered.map(_ * 2)
+
+    println(numbers.getHash)
+    println(filtered.getHash)
+    println(doubled.getHash)
+
+
   }
 }

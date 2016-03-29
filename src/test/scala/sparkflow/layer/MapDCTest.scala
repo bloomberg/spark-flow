@@ -3,9 +3,7 @@ package sparkflow.layer
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.scalatest.FunSuite
 import org.scalatest.ShouldMatchers
-import sparkflow.FlowFuncs._
-import sparkflow.serialization.Formats.SerializedDC
-import sparkflow.execute.Run.getRDD
+import sparkflow._
 
 /**
   * Created by ngoehausen on 2/29/16.

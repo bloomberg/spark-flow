@@ -4,6 +4,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
+import sparkflow._
 
 /**
   * DistributedCollection, analogous to RDD
@@ -11,12 +12,23 @@ import scala.reflect.ClassTag
 abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T] {
 
   private var rdd: RDD[T] = _
+  private var checkpointed = false
 
   protected def computeRDD(sc: SparkContext): RDD[T]
 
   def getRDD(sc: SparkContext): RDD[T] = {
     if(rdd == null){
-      this.rdd = this.computeRDD(sc)
+      if (checkpointed){
+        loadCheckpoint[T](getHash, sc) match {
+          case Some(existingRdd) => this.rdd = existingRdd
+          case None =>
+            this.rdd = computeRDD(sc)
+            rdd.cache()
+            saveCheckpoint(getHash, rdd)
+        }
+      } else {
+        this.rdd = this.computeRDD(sc)
+      }
     }
     rdd
   }
@@ -43,6 +55,11 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T] {
 
   def mapWith[U:ClassTag, V:ClassTag](dr: DR[_,U])(f: (T,U) => V) = {
     new ResultDepDC(this, dr, f)
+  }
+
+  def checkpoint(): this.type = {
+    this.checkpointed = true
+    this
   }
 
 }

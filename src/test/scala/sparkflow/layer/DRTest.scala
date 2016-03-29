@@ -3,10 +3,11 @@ package sparkflow.layer
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.rdd.RDD
 import org.scalatest._
-import sparkflow.FlowFuncs._
 
 import scala.util.Random
+import sparkflow._
 
 /**
   * Created by ngoehausen on 3/23/16.
@@ -14,13 +15,16 @@ import scala.util.Random
 class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
 
   test("normalize"){
-    val numbers = parallelize(1 to 10)
-    val doubles = numbers.map(_.toDouble)
-    val sum = doubles.mapToResult(_.sum())
-    val normalized = doubles.mapWith(sum)(_ / _)
 
-    val rdd = normalized.getRDD(sc)
-    rdd.foreach(println)
+
+
+    val numbers: DC[Int] = parallelize(1 to 10)
+    val doubles: DC[Double] = numbers.map(_.toDouble)
+    val sum: DR[_,Double] = doubles.mapToResult(rdd => rdd.sum())
+    val normalized: DC[Double] = doubles.mapWith(sum){case (number, s) => number / s}
+
+    val normalizedRDD = normalized.getRDD(sc)
+    normalizedRDD.foreach(println)
   }
 
 
@@ -39,5 +43,12 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
     println(ldaModel.getResult(sc).topicsMatrix)
 
+  }
+
+  test("regularSpark"){
+    val numbers: RDD[Int] = sc.parallelize(1 to 10)
+    val doubles: RDD[Double] = numbers.map(_.toDouble)
+    val sum: Double = doubles.sum()
+    val normalized: RDD[Double] = doubles.map(_ / sum)
   }
 }

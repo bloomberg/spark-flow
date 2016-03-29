@@ -19,7 +19,7 @@ private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
   }
 
   override def computeHash() = {
-    hashString(prev.getHash + hashClass(f))
+    hashString(prev.getHash + hashClass(hashTarget))
   }
 
 

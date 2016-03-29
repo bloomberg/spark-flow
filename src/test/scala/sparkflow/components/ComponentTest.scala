@@ -3,7 +3,7 @@ package sparkflow.components
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.scalatest._
 import sparkflow.layer.DC
-import sparkflow.FlowFuncs._
+import sparkflow._
 
 
 /**
