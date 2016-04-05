@@ -1,8 +1,10 @@
 package sparkflow.serialization
 
+import org.apache.spark.hax.MyClosureCleaner
 import org.scalatest.FunSuite
 import sparkflow._
 import sparkflow.serialization.Hashing._
+import org.apache.spark.hax.SerializeUtil.clean
 
 /**
   * Created by ngoehausen on 3/23/16.
@@ -10,11 +12,18 @@ import sparkflow.serialization.Hashing._
 class HashingTest extends FunSuite {
 
   test("functionHashing"){
-    val f = (x: Int) => x * 4
-    val g = (x: Int) => f(x)
+    val const = 7
 
-    println(hashClass(f))
+    val another = (x: Int) => x * 2
+
+    val nested = (x: Int) => x * 4 + const + another(x)
+    val g = (x: Int) => nested(x) + const
+
+    println(hashClass(nested))
     println(hashClass(g))
+
+    MyClosureCleaner.clean(g)
+//    println(hashClass(clean(f)))
   }
 
   test("dcHashing"){

@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import com.google.common.io.BaseEncoding
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.JavaSerializer
+import org.apache.spark.util.ClosureCleaner
 
 import scala.reflect.ClassTag
 
@@ -29,6 +30,10 @@ object SerializeUtil {
 
   def stringToObj[T:ClassTag](s: String): T = {
     deserialize(ByteBuffer.wrap(BaseEncoding.base64().decode(s)))
+  }
+
+  def clean(obj: AnyRef) = {
+    ClosureCleaner.clean(obj)
   }
 
 }
