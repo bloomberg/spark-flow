@@ -63,3 +63,11 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T] {
   }
 
 }
+
+object DC {
+
+  implicit def dcToPairDCFunctions[K, V](dc: DC[(K, V)])
+    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null): PairDCFunctions[K, V] = {
+    new PairDCFunctions(dc)
+  }
+}
