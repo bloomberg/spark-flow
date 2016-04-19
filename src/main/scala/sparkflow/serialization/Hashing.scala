@@ -3,7 +3,7 @@ package sparkflow.serialization
 import java.security.MessageDigest
 
 import com.google.common.io.BaseEncoding
-import org.objectweb.asm.ClassReader
+import sparkflow.serialization.ClassExploration.{getClasses, getClassReader}
 
 
 /**
@@ -21,11 +21,16 @@ private[sparkflow] object Hashing {
   }
 
   def hashClass(obj: AnyRef) = {
-    val className = obj.getClass.getName
-    val resourceName = "/" + className.replace(".", "/") + ".class"
-    val inputStream = obj.getClass.getResourceAsStream(resourceName)
 
-    val reader = new ClassReader(inputStream)
-    hashBytes(reader.b)
+    val allDepedendentClasses = getClasses(obj).toList.sortBy(_.getName)
+    val combinedHashTarget = allDepedendentClasses
+      .map(getClassReader)
+      .map(_.b)
+      .map(hashBytes)
+      .mkString("")
+
+    hashString(combinedHashTarget)
+
   }
+
 }

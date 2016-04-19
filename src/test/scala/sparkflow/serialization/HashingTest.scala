@@ -30,10 +30,12 @@ class HashingTest extends FunSuite {
     val numbers = parallelize(1 to 10)
     val filtered = numbers.filter(_ < 6)
     val doubled = filtered.map(_ * 2)
+    val after = doubled.map(SomeFunctions.func4)
 
     println(numbers.getHash)
     println(filtered.getHash)
     println(doubled.getHash)
+    println(after.getHash)
 
 
   }
