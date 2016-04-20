@@ -9,10 +9,10 @@ import scala.reflect.ClassTag
   * ResultDependentDistributedCollection
   */
 class ResultDepDC[U:ClassTag, T:ClassTag, V: ClassTag]
-(val prev: DC[T], dr: DR[_,U],f: (T,U) => V) extends DC[V](Seq(prev, dr)) {
+(val prev: DC[T], dr: DR[U],f: (T,U) => V) extends DC[V](Seq(prev, dr)) {
 
   override def computeRDD(sc: SparkContext) = {
-    val result = dr.getResult(sc)
+    val result = dr.get(sc)
     prev.getRDD(sc).mapPartitions(iterator => {
       iterator.map(t => f(t, result))
     })

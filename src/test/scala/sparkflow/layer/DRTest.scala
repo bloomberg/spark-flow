@@ -20,7 +20,7 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
 
     val numbers: DC[Int] = parallelize(1 to 10)
     val doubles: DC[Double] = numbers.map(_.toDouble)
-    val sum: DR[_,Double] = doubles.mapToResult(rdd => rdd.sum())
+    val sum: DR[Double] = doubles.mapToResult(rdd => rdd.sum())
     val normalized: DC[Double] = doubles.mapWith(sum){case (number, s) => number / s}
 
     val normalizedRDD = normalized.getRDD(sc)
@@ -41,7 +41,7 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
     val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
     val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
-    println(ldaModel.getResult(sc).topicsMatrix)
+    println(ldaModel.get(sc).topicsMatrix)
 
   }
 

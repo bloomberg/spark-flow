@@ -9,7 +9,7 @@ import sparkflow._
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T] {
+abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](deps) {
 
   private var rdd: RDD[T] = _
   private var checkpointed = false
@@ -49,11 +49,11 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T] {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, "zipWithUniqueId")
   }
 
-  def mapToResult[U:ClassTag](f: RDD[T] => U): DR[T,U] ={
-    new DR[T,U](this, f)
+  def mapToResult[U:ClassTag](f: RDD[T] => U): DR[U] ={
+    new DRImpl[T,U](this, f)
   }
 
-  def mapWith[U:ClassTag, V:ClassTag](dr: DR[_,U])(f: (T,U) => V) = {
+  def mapWith[U:ClassTag, V:ClassTag](dr: DR[U])(f: (T,U) => V) = {
     new ResultDepDC(this, dr, f)
   }
 
