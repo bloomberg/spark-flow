@@ -1,5 +1,7 @@
 name := "SparkFlow"
 
+organization := "bloomberg"
+
 version := "0.0.1"
 
 val SPARK_VERSION = "1.6.0"

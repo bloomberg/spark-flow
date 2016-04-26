@@ -2,7 +2,7 @@ package com.bloomberg
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import sparkflow.layer.{SourceDC, ParallelCollectionDC, DC}
+import sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
 import java.io.File
 
 import scala.reflect.ClassTag

@@ -3,7 +3,7 @@ package com.bloomberg.sparkflow.serialization
 import java.security.MessageDigest
 
 import com.google.common.io.BaseEncoding
-import sparkflow.serialization.ClassExploration.{getClasses, getClassReader}
+import com.bloomberg.sparkflow.serialization.ClassExploration.{getClasses, getClassReader}
 
 
 /**

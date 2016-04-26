@@ -3,7 +3,7 @@ package com.bloomberg.sparkflow.dc
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.scalatest.FunSuite
 import org.scalatest.ShouldMatchers
-import sparkflow._
+import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 2/29/16.

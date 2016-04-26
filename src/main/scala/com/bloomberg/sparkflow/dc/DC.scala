@@ -4,7 +4,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
-import sparkflow._
+import com.bloomberg.sparkflow._
 
 /**
   * DistributedCollection, analogous to RDD

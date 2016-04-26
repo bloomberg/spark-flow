@@ -1,6 +1,6 @@
 package com.bloomberg.sparkflow.components
 
-import com.bloomberg.sparkflow.layer.DC
+import com.bloomberg.sparkflow.dc.DC
 
 /**
   * Created by ngoehausen on 3/2/16.

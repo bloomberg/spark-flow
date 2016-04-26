@@ -2,7 +2,7 @@ package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.scalatest._
-import sparkflow._
+import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 3/24/16.

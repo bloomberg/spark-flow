@@ -2,7 +2,6 @@ package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
 import org.apache.spark.SparkContext
-import Hashing
 
 import scala.reflect.ClassTag
 

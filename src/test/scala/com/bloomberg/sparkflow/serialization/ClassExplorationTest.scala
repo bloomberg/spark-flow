@@ -16,12 +16,12 @@ class ClassExplorationTest extends FunSuite with ShouldMatchers {
     val classNames = ClassExploration.getClasses(g).map(_.getName)
 
     val expected = Set(
-      "sparkflow.serialization.SomeFunctions$",
-      "sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$3",
-      "sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$4",
+      "com.bloomberg.sparkflow.serialization.SomeFunctions$",
+      "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$3",
+      "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$4",
       "scala.Function1",
-      "sparkflow.serialization.SomeFunctions$$anonfun$3",
-      "sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$2"
+      "com.bloomberg.sparkflow.serialization.SomeFunctions$$anonfun$3",
+      "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$2"
     )
 
     expected should contain theSameElementsAs classNames

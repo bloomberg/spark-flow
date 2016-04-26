@@ -2,8 +2,8 @@ package com.bloomberg.sparkflow.serialization
 
 import org.apache.spark.hax.MyClosureCleaner
 import org.scalatest.FunSuite
-import sparkflow._
-import sparkflow.serialization.Hashing._
+import com.bloomberg.sparkflow._
+import com.bloomberg.sparkflow.serialization.Hashing._
 import org.apache.spark.hax.SerializeUtil.clean
 
 /**

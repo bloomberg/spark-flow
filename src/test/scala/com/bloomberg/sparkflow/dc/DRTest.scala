@@ -7,7 +7,7 @@ import org.apache.spark.rdd.RDD
 import org.scalatest._
 
 import scala.util.Random
-import sparkflow._
+import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 3/23/16.
