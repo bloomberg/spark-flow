@@ -11,11 +11,11 @@ import scala.reflect.ClassTag
   */
 class SourceDC[T: ClassTag](val source: String, val sourceFunc: SparkContext => RDD[T], val sourceType: String) extends DC[T](Nil)  {
 
-  override def computeRDD(sc: SparkContext) = {
-    sourceFunc(sc)
+  override def computeSparkResults(sc: SparkContext) = {
+    (sourceFunc(sc), None)
   }
 
-  override def computeHash() = {
+  override def computeSignature() = {
     Hashing.hashString(s"$sourceType:$source")
   }
 

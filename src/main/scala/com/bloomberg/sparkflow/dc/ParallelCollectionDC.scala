@@ -10,9 +10,11 @@ import scala.reflect.ClassTag
   */
 private[sparkflow] class ParallelCollectionDC[T:ClassTag](val data: Seq[T]) extends DC[T](Nil) {
 
-  override def computeRDD(sc: SparkContext) = sc.parallelize(data)
+  override def computeSparkResults(sc: SparkContext) = (sc.parallelize(data), None)
 
-  override def computeHash() = {
+  override def computeSignature() = {
     Hashing.hashString(data.map(_.toString).reduce(_ + _))
   }
+
+
 }

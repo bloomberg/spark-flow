@@ -20,6 +20,14 @@ private[sparkflow] object Hashing {
     hashBytes(s.getBytes())
   }
 
+  def hashSeq[T](seq: Seq[T]) = {
+    hashString(seq.mkString(";"))
+  }
+
+  def hashFunction(f: Any => Any) = {
+    hashClass(f)
+  }
+
   def hashClass(obj: AnyRef) = {
 
     val allDepedendentClasses = getClasses(obj).toList.sortBy(_.getName)

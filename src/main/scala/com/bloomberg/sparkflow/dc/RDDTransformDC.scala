@@ -15,13 +15,13 @@ private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
  f: RDD[T] => RDD[U],
  hashTarget: AnyRef) extends DC[U](Seq(prev)) {
 
-  def computeRDD(sc: SparkContext) = {
-    f(prev.getRDD(sc))
+  def computeSparkResults(sc: SparkContext) = {
+    val rdd = f(prev.getRDD(sc))
+    (rdd, None)
   }
 
-  override def computeHash() = {
-    hashString(prev.getHash + hashClass(hashTarget))
+  override def computeSignature() = {
+    hashString(prev.getSignature + hashClass(hashTarget))
   }
-
 
 }

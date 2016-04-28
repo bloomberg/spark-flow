@@ -32,10 +32,10 @@ class HashingTest extends FunSuite {
     val doubled = filtered.map(_ * 2)
     val after = doubled.map(SomeFunctions.func4)
 
-    println(numbers.getHash)
-    println(filtered.getHash)
-    println(doubled.getHash)
-    println(after.getHash)
+    println(numbers.getSignature)
+    println(filtered.getSignature)
+    println(doubled.getSignature)
+    println(after.getSignature)
 
 
   }

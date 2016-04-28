@@ -12,15 +12,16 @@ import scala.reflect.ClassTag
 class ResultDepDC[U:ClassTag, T:ClassTag, V: ClassTag]
 (val prev: DC[T], dr: DR[U],f: (T,U) => V) extends DC[V](Seq(prev, dr)) {
 
-  override def computeRDD(sc: SparkContext) = {
+  override def computeSparkResults(sc: SparkContext) = {
     val result = dr.get(sc)
-    prev.getRDD(sc).mapPartitions(iterator => {
+    val rdd = prev.getRDD(sc).mapPartitions(iterator => {
       iterator.map(t => f(t, result))
     })
+    (rdd, None)
   }
 
-  override def computeHash() = {
-    hashString(prev.getHash + dr.getHash + hashClass(f))
+  override def computeSignature() = {
+    hashString(prev.getSignature + dr.getSignature + hashClass(f))
   }
 
 }

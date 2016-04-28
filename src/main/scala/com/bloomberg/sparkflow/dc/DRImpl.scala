@@ -25,8 +25,8 @@ class DRImpl[T: ClassTag, U: ClassTag](prev: DC[T], f: RDD[T] => U) extends DR[U
     f(prev.getRDD(sc))
   }
 
-  override def computeHash() = {
-    hashString(prev.getHash + hashClass(f))
+  override def computeSignature() = {
+    hashString(prev.getSignature + hashClass(f))
   }
 
 }

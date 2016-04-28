@@ -10,15 +10,15 @@ abstract class Dependency[T: ClassTag](val parents: Seq[Dependency[_]]) extends 
   parents.map(_.children.add(this))
 
   val ct = classTag[T]
-  protected def computeHash(): String
-  private var hash: String = _
+  protected def computeSignature(): String
+  private var signature: String = _
 
 
-  def getHash: String = {
-    if(hash == null){
-      this.hash = this.computeHash()
+  def getSignature: String = {
+    if(signature == null){
+      this.signature = this.computeSignature()
     }
-    hash
+    signature
   }
 
 }

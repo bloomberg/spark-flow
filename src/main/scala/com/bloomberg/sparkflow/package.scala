@@ -2,6 +2,7 @@ package com.bloomberg
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.DCDataFrameReader
 import sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
 import java.io.File
 
@@ -14,6 +15,8 @@ import scala.util.Try
 package object sparkflow {
 
   val sentinelInt = -1
+
+  def read = new DCDataFrameReader
 
   def parallelize[T:ClassTag](seq: Seq[T]): DC[T] = {
     new ParallelCollectionDC(seq)
