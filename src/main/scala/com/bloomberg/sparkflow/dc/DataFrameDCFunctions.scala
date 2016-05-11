@@ -15,7 +15,6 @@ class DataFrameDCFunctions(self: DC[Row]) {
     sqlContext.createDataFrame(self.getRDD(sc), self.getSchema(sc).get)
   }
 
-
   @scala.annotation.varargs
   def select(cols: Column*): DC[Row] = {
     val f = (df: DataFrame) => {
@@ -65,5 +64,24 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new Column(colName)
   }
 
+  def join(right: DC[Row]): DC[Row] = {
+    val f = (left: DataFrame, right: DataFrame) => {
+      left.join(right)
+    }
+    val hashTarget = Seq("join")
+    new MultiDFTransformDC(self, right, f, hashTarget)
+  }
+
+  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, Seq(usingColumn))
+
+  def join(right: DC[Row], usingColumns: Seq[String]): DC[Row] = join(right, usingColumns, "inner")
+
+  def join(right: DC[Row], usingColumns: Seq[String], joinType: String): DC[Row] = {
+    val f = (left: DataFrame, right: DataFrame) => {
+      left.join(right, usingColumns, joinType)
+    }
+    val hashTarget = Seq("join", joinType) ++ usingColumns
+    new MultiDFTransformDC(self, right, f, hashTarget)
+  }
 
 }

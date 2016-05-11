@@ -2,12 +2,15 @@ package com.bloomberg.sparkflow.dc
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{SQLContext, Row}
 import org.apache.spark.sql.types.StructType
 import scala.language.implicitConversions
 
 import scala.reflect.ClassTag
+import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
+import scala.reflect.runtime.universe.TypeTag
+
 
 /**
   * DistributedCollection, analogous to RDD
@@ -23,6 +26,9 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
   protected def computeSparkResults(sc: SparkContext): (RDD[T], Option[StructType])
 
   def getRDD(sc: SparkContext): RDD[T] = {
+    if (sparkflow.sQLContext == null){
+      sparkflow.sQLContext = SQLContext.getOrCreate(sc)
+    }
     if(!assigned){
       if (checkpointed){
         loadCheckpoint[T](getSignature, sc) match {
@@ -96,5 +102,9 @@ object DC {
 
   implicit def dcToDFFunctions(dc: DC[Row]): DataFrameDCFunctions = {
     new DataFrameDCFunctions(dc)
+  }
+
+  implicit def dcToProductDCFunctions[T <: Product : TypeTag](dc: DC[T]): ProductDCFunctions[T] = {
+    new ProductDCFunctions[T](dc)
   }
 }

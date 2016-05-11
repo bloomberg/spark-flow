@@ -1,9 +1,12 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
-import org.apache.spark.sql.SQLContext
 import org.scalatest._
 import com.bloomberg.sparkflow._
+import com.bloomberg.sparkflow.CaseClasses._
+
+import scala.util.Random
+
 
 /**
   * Created by ngoehausen on 4/26/16.
@@ -19,21 +22,12 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
       .format("csv")
       .option("header", "true")
       .load(testFile("cars.csv"))
-    val df = cars.getDF(sc)
-    df.show()
-
-    df.columns
 
     val makeModel = cars.select("make", "model")
+    val make = cars.select(cars("make"))
 
-    val make = cars.select("make")
-    val tesla = cars.filter(cars("make") === "Tesla")
-    tesla.getDF(sc).show()
-
-    println(makeModel.getSignature)
-    println(make.getSignature)
+    assert(make.getSignature != makeModel.getSignature)
   }
-
 
   test("json"){
     val path = "test.json"
@@ -41,4 +35,14 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     val dc = read.json(testFile(path))
     println(dc.getRDD(sc).first())
   }
+
+  test("fromRdd"){
+    val trashFires = parallelize(1 to 10)
+      .map(_ => TrashFire(Random.nextDouble(), Random.nextDouble()))
+
+    val dfdc = trashFires.toDF()
+    dfdc.select("temp").getDF(sc).show()
+
+  }
+
 }

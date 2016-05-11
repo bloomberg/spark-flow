@@ -2,17 +2,32 @@ package com.bloomberg
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.DCDataFrameReader
-import sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
+import org.apache.spark.sql.{ColumnName, SQLImplicits, SQLContext, DCDataFrameReader}
+import com.bloomberg.sparkflow.dc.{ProductDCFunctions, SourceDC, ParallelCollectionDC, DC}
 import java.io.File
 
 import scala.reflect.ClassTag
 import scala.util.Try
 
+import scala.reflect.runtime.universe.TypeTag
+import scala.language.implicitConversions
+
 /**
   * Created by ngoehausen on 3/24/16.
   */
-package object sparkflow {
+package object sparkflow extends SQLImplicits with Serializable{
+
+
+  private[sparkflow] var sQLContext: SQLContext = null
+  protected override def _sqlContext: SQLContext = sQLContext
+
+  // This must live here to preserve binary compatibility with Spark < 1.5.
+  implicit class StringToColumn(val sc: StringContext) {
+    def $(args: Any*): ColumnName = {
+      new ColumnName(sc.s(args: _*))
+    }
+  }
+
 
   val sentinelInt = -1
 
@@ -22,13 +37,14 @@ package object sparkflow {
     new ParallelCollectionDC(seq)
   }
 
+  def textFile(path: String) = {
+    val sourceFunc = (sc: SparkContext) => sc.textFile(path)
+    new SourceDC[String](path, sourceFunc, "textFile")
+  }
+
   def textFile(path: String,
-               minPartitions: Int = sentinelInt) = {
-    val sourceFunc = if(minPartitions == sentinelInt){
-      (sc: SparkContext) => sc.textFile(path)
-    } else {
-      (sc: SparkContext) => sc.textFile(path, minPartitions)
-    }
+               minPartitions: Int) = {
+    val sourceFunc = (sc: SparkContext) => sc.textFile(path, minPartitions)
     new SourceDC[String](path, sourceFunc, "textFile")
   }
 
@@ -41,7 +57,6 @@ package object sparkflow {
     }
     new SourceDC[T](path, sourceFunc, "objectFile")
   }
-
 
   private var checkpointDir = "/tmp/sparkflow"
   def setCheckpointDir(s: String) = {checkpointDir = s}
