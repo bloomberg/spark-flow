@@ -13,15 +13,19 @@ import scala.reflect.ClassTag
 private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
 (val prev: DC[T],
  f: RDD[T] => RDD[U],
- hashTarget: AnyRef) extends DC[U](Seq(prev)) {
+ hashTarget: Seq[String]) extends DC[U](Seq(prev)) {
+
+  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef) = {
+    this(prev, f, Seq(hashClass(hashTarget)))
+  }
 
   def computeSparkResults(sc: SparkContext) = {
     val rdd = f(prev.getRDD(sc))
-    (rdd, None)
+    (rdd, prev.getSchema(sc))
   }
 
   override def computeSignature() = {
-    hashString(prev.getSignature + hashClass(hashTarget))
+    hashString(prev.getSignature + hashSeq(hashTarget))
   }
 
 }

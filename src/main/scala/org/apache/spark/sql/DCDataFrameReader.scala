@@ -3,15 +3,7 @@ package org.apache.spark.sql
 import java.util.Properties
 
 import com.bloomberg.sparkflow.dc.{DataframeSourceDC, DC}
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.util.StringUtils
-import org.apache.spark.Partition
-import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.catalyst.SqlParser
-import org.apache.spark.sql.execution.datasources.jdbc.{JDBCPartition, JDBCPartitioningInfo, JDBCRelation}
-import org.apache.spark.sql.execution.datasources.json.JSONRelation
-import org.apache.spark.sql.execution.datasources.parquet.ParquetRelation
-import org.apache.spark.sql.execution.datasources.{LogicalRelation, ResolvedDataSource}
 import org.apache.spark.sql.types.StructType
 
 /**
@@ -89,16 +81,16 @@ class DCDataFrameReader {
     */
   def load(): DC[Row] = {
     val f = (sqlContext: SQLContext) => {
-      val source = sourceOpt.getOrElse(sqlContext.conf.defaultDataSourceName)
-      println(source)
-      println(extraOptions)
-      val resolved = ResolvedDataSource(
-        sqlContext,
-        userSpecifiedSchema = userSpecifiedSchema,
-        partitionColumns = Array.empty[String],
-        provider = source,
-        options = extraOptions.toMap)
-      DataFrame(sqlContext, LogicalRelation(resolved.relation))
+      val withOptions = sqlContext.read.options(extraOptions)
+      val withSource = sourceOpt match {
+        case Some(source) => withOptions.format(source)
+        case None => withOptions
+      }
+      val withSchema = userSpecifiedSchema match {
+        case Some(schema) => withSource.schema(schema)
+        case None => withOptions
+      }
+      withSchema.load()
     }
     new DataframeSourceDC(f, extraOptions("path"))
   }
@@ -121,7 +113,10 @@ class DCDataFrameReader {
     * @since 1.4.0
     */
   def jdbc(url: String, table: String, properties: Properties): DC[Row] = {
-    jdbc(url, table, JDBCRelation.columnPartition(null), properties)
+    val f = (sqlContext: SQLContext) => {
+      sqlContext.read.jdbc(url, table, properties)
+    }
+    new DataframeSourceDC(f, extraOptions("path"))
   }
 
   /**
@@ -152,9 +147,10 @@ class DCDataFrameReader {
             upperBound: Long,
             numPartitions: Int,
             connectionProperties: Properties): DC[Row] = {
-    val partitioning = JDBCPartitioningInfo(columnName, lowerBound, upperBound, numPartitions)
-    val parts = JDBCRelation.columnPartition(partitioning)
-    jdbc(url, table, parts, connectionProperties)
+    val f = (sqlContext: SQLContext) => {
+      sqlContext.read.jdbc(url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties)
+    }
+    new DataframeSourceDC(f, extraOptions("path"))
   }
 
   /**
@@ -179,30 +175,12 @@ class DCDataFrameReader {
             table: String,
             predicates: Array[String],
             connectionProperties: Properties): DC[Row] = {
-    val parts: Array[Partition] = predicates.zipWithIndex.map { case (part, i) =>
-      JDBCPartition(part, i) : Partition
-    }
-    jdbc(url, table, parts, connectionProperties)
-  }
-
-  private def jdbc(
-                    url: String,
-                    table: String,
-                    parts: Array[Partition],
-                    connectionProperties: Properties): DC[Row] = {
-    val props = new Properties()
-    extraOptions.foreach { case (key, value) =>
-      props.put(key, value)
-    }
-    // connectionProperties should override settings in extraOptions
-    props.putAll(connectionProperties)
     val f = (sqlContext: SQLContext) => {
-      val relation = JDBCRelation(url, table, parts, props)(sqlContext)
-      sqlContext.baseRelationToDataFrame(relation)
+      sqlContext.read.jdbc(url, table, predicates, connectionProperties)
     }
     new DataframeSourceDC(f, extraOptions("path"))
-
   }
+
 
   /**
     * Loads a JSON file (one object per line) and returns the result as a [[DataFrame]].
@@ -288,20 +266,7 @@ class DCDataFrameReader {
   @scala.annotation.varargs
   def parquet(paths: String*): DC[Row] = {
     val f = (sqlContext: SQLContext) => {
-      if (paths.isEmpty) {
-        sqlContext.emptyDataFrame
-      } else {
-        val globbedPaths = paths.flatMap { path =>
-          val hdfsPath = new Path(path)
-          val fs = hdfsPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-          val qualified = hdfsPath.makeQualified(fs.getUri, fs.getWorkingDirectory)
-          SparkHadoopUtil.get.globPathIfNecessary(qualified)
-        }.toArray
-
-        sqlContext.baseRelationToDataFrame(
-          new ParquetRelation(
-            globbedPaths.map(_.toString), userSpecifiedSchema, None, extraOptions.toMap)(sqlContext))
-      }
+      sqlContext.read.parquet(paths:_*)
     }
     new DataframeSourceDC(f, paths.mkString(";"))
   }
@@ -322,8 +287,7 @@ class DCDataFrameReader {
     */
   def table(tableName: String): DC[Row] = {
     val f = (sqlContext: SQLContext) => {
-      DataFrame(sqlContext,
-        sqlContext.catalog.lookupRelation(SqlParser.parseTableIdentifier(tableName)))
+      sqlContext.table(tableName)
     }
     // TODO: this breaks signature lineage
     new DataframeSourceDC(f, tableName)

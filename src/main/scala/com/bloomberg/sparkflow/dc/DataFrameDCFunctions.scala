@@ -72,15 +72,15 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new MultiDFTransformDC(self, right, f, hashTarget)
   }
 
-  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, Seq(usingColumn))
+  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
 
-  def join(right: DC[Row], usingColumns: Seq[String]): DC[Row] = join(right, usingColumns, "inner")
+  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
 
-  def join(right: DC[Row], usingColumns: Seq[String], joinType: String): DC[Row] = {
+  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
     val f = (left: DataFrame, right: DataFrame) => {
-      left.join(right, usingColumns, joinType)
+      left.join(right, joinExprs, joinType)
     }
-    val hashTarget = Seq("join", joinType) ++ usingColumns
+    val hashTarget = Seq("join", joinType, joinExprs.toString())
     new MultiDFTransformDC(self, right, f, hashTarget)
   }
 

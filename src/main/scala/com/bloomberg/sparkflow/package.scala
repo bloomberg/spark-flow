@@ -2,34 +2,53 @@ package com.bloomberg
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ColumnName, SQLImplicits, SQLContext, DCDataFrameReader}
-import com.bloomberg.sparkflow.dc.{ProductDCFunctions, SourceDC, ParallelCollectionDC, DC}
-import java.io.File
+import org.apache.spark.sql._
+import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
+
+import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.execution.{RDDConversions}
+import org.apache.spark.sql.types.StructType
 
 import scala.reflect.ClassTag
-import scala.util.Try
-
 import scala.reflect.runtime.universe.TypeTag
+
+
 import scala.language.implicitConversions
 
 /**
   * Created by ngoehausen on 3/24/16.
   */
-package object sparkflow extends SQLImplicits with Serializable{
+package object sparkflow {
 
 
-  private[sparkflow] var sQLContext: SQLContext = null
-  protected override def _sqlContext: SQLContext = sQLContext
+//  private[sparkflow] var sqlContext: SQLContext = null
 
-  // This must live here to preserve binary compatibility with Spark < 1.5.
+//  // This must live here to preserve binary compatibility with Spark < 1.5.
   implicit class StringToColumn(val sc: StringContext) {
     def $(args: Any*): ColumnName = {
       new ColumnName(sc.s(args: _*))
     }
   }
 
+  /**
+    * An implicit conversion that turns a Scala `Symbol` into a [[Column]].
+    *
+    * @since 1.3.0
+    */
+  implicit def symbolToColumn(s: Symbol): ColumnName = new ColumnName(s.name)
 
-  val sentinelInt = -1
+  /**
+    * Creates a DataFrame from an RDD of case classes or tuples.
+    *
+    * @since 1.3.0
+    */
+
+  implicit def rddToDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
+    val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
+    val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
+    val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
+    sqlContext.createDataFrame(rowRDD, schema)
+  }
 
   def read = new DCDataFrameReader
 
@@ -48,29 +67,18 @@ package object sparkflow extends SQLImplicits with Serializable{
     new SourceDC[String](path, sourceFunc, "textFile")
   }
 
-  def objectFile[T:ClassTag](path: String,
-                             minPartitions: Int = sentinelInt) = {
-    val sourceFunc = if(minPartitions == sentinelInt){
-      (sc: SparkContext) => sc.objectFile[T](path)
-    } else {
-      (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
-    }
+  def objectFile[T:ClassTag](path: String) = {
+    val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path)
     new SourceDC[T](path, sourceFunc, "objectFile")
   }
 
-  private var checkpointDir = "/tmp/sparkflow"
+  def objectFile[T:ClassTag](path: String,
+                             minPartitions: Int) = {
+    val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
+    new SourceDC[T](path, sourceFunc, "objectFile")
+  }
+
+  private[sparkflow] var checkpointDir = "/tmp/sparkflow"
   def setCheckpointDir(s: String) = {checkpointDir = s}
-
-  private[sparkflow] def saveCheckpoint[T:ClassTag](hash: String, rdd: RDD[T]) = {
-    rdd.saveAsObjectFile(new File(checkpointDir, hash).toString)
-  }
-
-  private[sparkflow] def loadCheckpoint[T:ClassTag](hash: String, sc: SparkContext): Option[RDD[T]] = {
-    Try{
-      val attemptRDD = sc.objectFile[T](new File(checkpointDir, hash).toString)
-      attemptRDD.first()
-      attemptRDD
-    }.toOption
-  }
 
 }

@@ -1,13 +1,13 @@
-name := "SparkFlow"
+name := "spark-flow"
 
-organization := "bloomberg"
+organization := "com.bloomberg"
 
-version := "0.0.1"
+version := "0.0.2-SNAPSHOT"
 
-val SPARK_VERSION = "1.6.0"
+val SPARK_VERSION = "1.4.1"
 val JSON4S_VERSION = "3.3.0"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.10.4"
 
 resolvers ++= Seq("mvnrepository" at "http://mvnrepository.com/artifact/")
 
@@ -17,23 +17,23 @@ val scalaExc = ExclusionRule(organization="org.scala-lang")
 val hadoopExc = ExclusionRule(organization="org.apache.hadoop")
 
 libraryDependencies ++= Seq(
-  "org.ow2.asm" % "asm" % "5.1" withSources(),
-  "org.apache.spark" %% "spark-core" % SPARK_VERSION excludeAll(asmExclusion, scalaExc),
-  "org.apache.spark" %% "spark-sql" % SPARK_VERSION withSources() excludeAll(asmExclusion, scalaExc),
-  "org.apache.spark" %% "spark-mllib" % SPARK_VERSION withSources() excludeAll(asmExclusion, scalaExc),
+//  "org.ow2.asm" % "asm" % "5.1" withSources(),
+  "org.apache.spark" %% "spark-core" % SPARK_VERSION % "provided",
+  "org.apache.spark" %% "spark-sql" % SPARK_VERSION % "provided",
+  "org.apache.spark" %% "spark-mllib" % SPARK_VERSION % "provided",
+  "com.google.guava" % "guava" % "19.0",
   "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1" % "test" excludeAll(asmExclusion, scalaExc, hadoopExc),
   "org.scalatest" %% "scalatest" % "2.2.1" % "test" withSources() excludeAll(scalaExc),
-  "com.databricks" % "spark-csv_2.11" % "1.4.0",
-  "org.scala-lang" % "scala-compiler" % "2.11.8"
+  "com.databricks" %% "spark-csv" % "1.4.0",
+  "org.scala-lang" % "scala-compiler" % "2.10.4"
 )
 
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
 
 parallelExecution in Test := false
 
-
 publishTo := {
-  val artifactory = "http://artifactory.dev.bloomberg.com:8081/artifactory/"
+  val artifactory = "http://artifactory.dev.bloomberg.com:8081/artifactory"
   if (isSnapshot.value) Some("bloomberg-artifactory-snapshots" at s"$artifactory/libs-snapshot-local")
   else Some("bloomberg-artifactory-releases" at s"$artifactory/libs-release-local")
 }

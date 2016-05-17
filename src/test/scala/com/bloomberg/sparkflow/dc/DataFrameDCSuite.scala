@@ -24,15 +24,21 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
       .load(testFile("cars.csv"))
 
     val makeModel = cars.select("make", "model")
-    val make = cars.select(cars("make"))
+    val make = cars.select(cars("make")).checkpoint()
 
     assert(make.getSignature != makeModel.getSignature)
+
+    make.getDF(sc).foreach(println)
   }
 
   test("json"){
     val path = "test.json"
 
-    val dc = read.json(testFile(path))
+    val dc = read.json(testFile(path)).repartition(10)
+
+    val providerURLS = dc.select("provider_urls").checkpoint()
+
+    providerURLS.getDF(sc).show()
     println(dc.getRDD(sc).first())
   }
 

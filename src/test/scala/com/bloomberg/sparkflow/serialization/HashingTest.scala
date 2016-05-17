@@ -22,7 +22,7 @@ class HashingTest extends FunSuite {
     println(hashClass(nested))
     println(hashClass(g))
 
-    MyClosureCleaner.clean(g)
+//    MyClosureCleaner.clean(g)
 //    println(hashClass(clean(f)))
   }
 
