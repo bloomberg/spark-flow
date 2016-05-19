@@ -8,6 +8,7 @@ import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
 import org.apache.spark.sql.catalyst.ScalaReflection
 import org.apache.spark.sql.execution.{RDDConversions}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.storage.StorageLevel
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
@@ -80,5 +81,8 @@ package object sparkflow {
 
   private[sparkflow] var checkpointDir = "/tmp/sparkflow"
   def setCheckpointDir(s: String) = {checkpointDir = s}
+
+  private[sparkflow] var defaultPersistence = StorageLevel.MEMORY_AND_DISK
+  def setPersistence(storageLevel: StorageLevel) = {defaultPersistence = storageLevel}
 
 }

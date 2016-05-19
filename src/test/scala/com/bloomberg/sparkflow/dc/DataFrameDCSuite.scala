@@ -17,19 +17,20 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     Thread.currentThread().getContextClassLoader.getResource(fileName).toString
   }
 
-  test("csv"){
-    val cars = read
-      .format("csv")
-      .option("header", "true")
-      .load(testFile("cars.csv"))
-
-    val makeModel = cars.select("make", "model")
-    val make = cars.select(cars("make")).checkpoint()
-
-    assert(make.getSignature != makeModel.getSignature)
-
-    make.getDF(sc).foreach(println)
-  }
+  // TODO: upgrade to latest spark for builtin csv reader
+//  test("csv"){
+//    val cars = read
+//      .format("csv")
+//      .option("header", "true")
+//      .load(testFile("cars.csv"))
+//
+//    val makeModel = cars.select("make", "model")
+//    val make = cars.select(cars("make")).checkpoint()
+//
+//    assert(make.getSignature != makeModel.getSignature)
+//
+//    make.getDF(sc).foreach(println)
+//  }
 
   test("json"){
     val path = "test.json"

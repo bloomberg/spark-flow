@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext, Row}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 import scala.language.implicitConversions
 
@@ -12,8 +12,8 @@ import scala.reflect.ClassTag
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
 import scala.reflect.runtime.universe.TypeTag
-import scala.util.Try
-
+import scala.reflect._
+import sparkflow.dc.Util._
 
 /**
   * DistributedCollection, analogous to RDD
@@ -23,37 +23,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
   private var rdd: RDD[T] = _
   private var checkpointed = false
   private var schema: Option[StructType] = None
-
   private var assigned = false
 
   protected def computeSparkResults(sc: SparkContext): (RDD[T], Option[StructType])
 
-  def getRDD(sc: SparkContext): RDD[T] = {
-
-    synchronized {
-      if (!assigned) {
-        if (checkpointed) {
-          loadCheckpoint(sc) match {
-            case Some((resultRdd, resultSchema)) => assignSparkResults(resultRdd, resultSchema)
-            case None =>
-              assignComputedSparkResults(sc)
-              rdd.cache()
-              saveCheckpoint()
-          }
-        } else {
-          assignComputedSparkResults(sc)
-        }
-      }
-    }
-    rdd
-  }
-
-  def getSchema(sc: SparkContext): Option[StructType] = {
-    if(!assigned) {
-      getRDD(sc)
-    }
-    schema
-  }
 
   def map[U: ClassTag](f: T => U): DC[U] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.map(f), f)
@@ -88,53 +61,41 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.repartition(numPartitions), Seq("repartition", numPartitions.toString))
   }
 
-  private def saveCheckpoint() = {
-    assert(rdd != null)
-    if (schema.isDefined){
-      val rowDC = this.asInstanceOf[DC[Row]]
-      val df = rowDC.getDF(rdd.sparkContext)
-      df.write.parquet(checkpointPath)
-    } else {
-      rdd.saveAsObjectFile(checkpointPath)
-    }
+  def getRDD(sc: SparkContext): RDD[T] = {
 
-  }
-
-  private def loadCheckpoint(sc: SparkContext): Option[(RDD[T], Option[StructType])] = {
-    val dfAttempt = attemptDFLoad(sc)
-    dfAttempt match {
-      case Some(df) => Some((df.rdd.asInstanceOf[RDD[T]], Some(df.schema)))
-      case None =>
-        val rddAttempt = attemptRDDLoad(sc)
-        rddAttempt match {
-          case Some(resultRDD) => Some((resultRDD, None))
-          case None => None
+    synchronized {
+      if (!assigned) {
+        if (checkpointed) {
+          loadCheckpoint[T](checkpointPath, sc, dataFrameBacked) match {
+            case Some((resultRdd, resultSchema)) => assignSparkResults(resultRdd, resultSchema)
+            case None =>
+              val (resultRDD, resultSchema) = computeSparkResults(sc)
+              resultRDD.persist(defaultPersistence)
+              resultRDD.count()
+              saveCheckpoint(checkpointPath, resultRDD, resultSchema, dataFrameBacked)
+              loadCheckpoint[T](checkpointPath, sc, dataFrameBacked) match {
+                case Some((rRDD, rSchema)) => assignSparkResults(rRDD, rSchema)
+                case None => throw new RuntimeException(s"failed to persist to: $checkpointPath")
+              }
+          }
+        } else {
+          assignComputedSparkResults(sc)
         }
+      }
     }
-
+    rdd
   }
 
-  private def attemptDFLoad(sc: SparkContext): Option[DataFrame] = {
-    Try{
-      val sqlContext = SQLContext.getOrCreate(sc)
-      val attemptDF = sqlContext.read.parquet(checkpointPath)
-      attemptDF.first()
-      attemptDF
-    }.toOption
-  }
-
-  private def attemptRDDLoad(sc: SparkContext): Option[RDD[T]] = {
-    Try{
-      val attemptRDD = sc.objectFile[T](new File(checkpointDir, getSignature).toString)
-      attemptRDD.first()
-      attemptRDD
-    }.toOption
+  def getSchema(sc: SparkContext): Option[StructType] = {
+    if(!assigned) {
+      getRDD(sc)
+    }
+    schema
   }
 
   private def checkpointPath = new File(checkpointDir, getSignature).toString
 
-
-  def assignSparkResults(resultRdd: RDD[T], resultSchema: Option[StructType]) = {
+  private def assignSparkResults(resultRdd: RDD[T], resultSchema: Option[StructType]) = {
     synchronized {
       assert(!assigned)
       this.rdd = resultRdd
@@ -149,6 +110,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
       val (resultRdd, resultSchema) = computeSparkResults(sc)
       assignSparkResults(resultRdd, resultSchema)
     }
+  }
+
+  private def dataFrameBacked = {
+    this.ct.equals(classTag[Row])
   }
 
 }
