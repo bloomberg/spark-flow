@@ -1,6 +1,7 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
+import org.apache.spark.sql.SQLContext
 import org.scalatest._
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.CaseClasses._
@@ -38,6 +39,8 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     val dc = read.json(testFile(path)).repartition(10)
 
     val providerURLS = dc.select("provider_urls").checkpoint()
+
+    providerURLS.getDF(sc).columns.foreach(println)
 
     providerURLS.getDF(sc).show()
     println(dc.getRDD(sc).first())

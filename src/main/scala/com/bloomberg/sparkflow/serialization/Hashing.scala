@@ -13,7 +13,7 @@ private[sparkflow] object Hashing {
 
   def hashBytes(bytes: Array[Byte]) = {
     val md5 = MessageDigest.getInstance("MD5").digest(bytes)
-    BaseEncoding.base64().encode(md5)
+    BaseEncoding.base16().encode(md5)
   }
 
   def hashString(s: String) = {
