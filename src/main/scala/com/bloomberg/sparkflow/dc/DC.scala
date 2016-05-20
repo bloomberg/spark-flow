@@ -48,8 +48,8 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new DRImpl[T,U](this, f)
   }
 
-  def mapWith[U:ClassTag, V:ClassTag](dr: DR[U])(f: (T,U) => V) = {
-    new ResultDepDC(this, dr, f)
+  def withResult[U: ClassTag](dr: DR[U]): DC[(T,U)] = {
+    new ResultDepDC(this, dr)
   }
 
   def checkpoint(): this.type = {

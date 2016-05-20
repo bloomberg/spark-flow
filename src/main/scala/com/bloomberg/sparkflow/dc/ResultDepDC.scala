@@ -9,19 +9,19 @@ import scala.reflect.ClassTag
 /**
   * ResultDependentDistributedCollection
   */
-class ResultDepDC[U:ClassTag, T:ClassTag, V: ClassTag]
-(val prev: DC[T], dr: DR[U],f: (T,U) => V) extends DC[V](Seq(prev, dr)) {
+class ResultDepDC[U:ClassTag, T:ClassTag]
+(val prev: DC[T], dr: DR[U]) extends DC[(T,U)](Seq(prev, dr)) {
 
   override def computeSparkResults(sc: SparkContext) = {
     val result = dr.get(sc)
     val rdd = prev.getRDD(sc).mapPartitions(iterator => {
-      iterator.map(t => f(t, result))
+      iterator.map(t => (t, result))
     })
     (rdd, None)
   }
 
   override def computeSignature() = {
-    hashString(prev.getSignature + dr.getSignature + hashClass(f))
+    hashString(prev.getSignature + dr.getSignature)
   }
 
 }
