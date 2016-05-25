@@ -1,6 +1,9 @@
 package com.bloomberg.sparkflow.dc
 
 
+import java.util.UUID
+
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SQLContext, DataFrame, Row}
@@ -54,10 +57,20 @@ object Util {
   }
 
   private def attemptRDDLoad[T: ClassTag](checkpointPath: String, sc: SparkContext): Option[RDD[T]] = {
-    Try{
-      val attemptRDD = sc.objectFile[T](checkpointPath)
-      attemptRDD.first()
-      attemptRDD
-    }.toOption
+    val path = new Path(checkpointPath)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    if (fs.exists(path)) {
+      Some(sc.objectFile[T](checkpointPath))
+    } else {
+      None
+    }
+
   }
+
+  def pathExists(dir: String, sc: SparkContext) = {
+    val path = new Path(dir)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    fs.exists(path)
+  }
+
 }
