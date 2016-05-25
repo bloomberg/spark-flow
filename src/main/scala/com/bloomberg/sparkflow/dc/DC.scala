@@ -44,6 +44,19 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
 
+  def sample(
+              withReplacement: Boolean,
+              fraction: Double): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sample(withReplacement, fraction), Seq("sample", withReplacement, fraction))
+  }
+
+  def sample(
+              withReplacement: Boolean,
+              fraction: Double,
+              seed: Long): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sample(withReplacement, fraction, seed), Seq("sample", withReplacement, fraction, seed))
+  }
+
   def mapToResult[U:ClassTag](f: RDD[T] => U): DR[U] ={
     new DRImpl[T,U](this, f)
   }
@@ -127,6 +140,10 @@ object DC {
 
   implicit def dcToDFFunctions(dc: DC[Row]): DataFrameDCFunctions = {
     new DataFrameDCFunctions(dc)
+  }
+
+  implicit def dcToDoubleFunctions(dc: DC[Double]): DoubleDCFunctions = {
+    new DoubleDCFunctions(dc)
   }
 
   implicit def dcToProductDCFunctions[T <: Product : TypeTag](dc: DC[T]): ProductDCFunctions[T] = {
