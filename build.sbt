@@ -2,7 +2,7 @@ name := "spark-flow"
 
 organization := "com.bloomberg"
 
-version := "0.0.3-SNAPSHOT"
+version := "0.0.3"
 
 val SPARK_VERSION = "1.4.1"
 val JSON4S_VERSION = "3.3.0"
