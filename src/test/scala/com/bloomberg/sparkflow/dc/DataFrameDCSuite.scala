@@ -1,7 +1,7 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{Row, SQLContext}
 import org.scalatest._
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.CaseClasses._
@@ -53,6 +53,16 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     val dfdc = trashFires.toDF()
     dfdc.select("temp").getDF(sc).show()
 
+  }
+
+  test("union"){
+    val trashFires = parallelize(Seq(TrashFire(1,1))).toDF()
+    val trashFires2 = parallelize(Seq(TrashFire(2,2))).toDF()
+
+    val result = trashFires.union(trashFires2)
+    val expected = Seq(Row(1,1), Row(2,2))
+
+    expected should contain theSameElementsAs result.getDF(sc).collect()
   }
 
 }
