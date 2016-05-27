@@ -19,7 +19,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
   }
 
   def groupByKey(numPartitions: Int): DC[(K, Iterable[V])] = {
-    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions), Seq(numPartitions.toString))
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions), Seq("groupByKey", numPartitions.toString))
   }
 
   def join[W](other: DC[(K,W)]): DC[(K, (V, W))] = {
