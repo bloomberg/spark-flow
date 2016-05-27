@@ -57,6 +57,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sample(withReplacement, fraction, seed), Seq("sample", withReplacement, fraction, seed))
   }
 
+  def union(other: DC[T]): DC[T] = {
+    new UnionDC[T](this, other)
+  }
+
   def mapToResult[U:ClassTag](f: RDD[T] => U): DR[U] ={
     new DRImpl[T,U](this, f)
   }

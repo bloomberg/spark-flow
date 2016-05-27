@@ -62,4 +62,12 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
   }
 
+  def keys: DC[K] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.keys, Seq("keys"))
+  }
+
+  def values: DC[V] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.values, Seq("values"))
+  }
+
 }
