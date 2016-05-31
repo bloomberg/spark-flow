@@ -61,6 +61,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new UnionDC[T](this, other)
   }
 
+  def ++(other: DC[T]): DC[T] = {
+    this.union(other)
+  }
+
   def mapToResult[U:ClassTag](f: RDD[T] => U): DR[U] ={
     new DRImpl[T,U](this, f)
   }

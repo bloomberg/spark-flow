@@ -51,6 +51,9 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new DataFrameTransformDC(self, f, hashTarget)
   }
 
+  def unionAll(other: DC[Row]): DC[Row] = {
+    new UnionDC[Row](self, other)
+  }
 
   def drop(colName: String): DC[Row] = {
     val f = (df: DataFrame) => {
