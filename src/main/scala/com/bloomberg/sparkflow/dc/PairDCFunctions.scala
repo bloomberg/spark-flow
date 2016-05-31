@@ -173,6 +173,24 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     this.cogroup(other1, other2, other3)
   }
 
+  def subtractByKey[W: ClassTag](other: DC[(K,W)]): DC[(K,V)] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.subtractByKey(right)
+    }
+    new MultiInputDC[(K,V), K](Seq(self, other), resultFunc)
+  }
+
+  def subtractByKey[W: ClassTag](other: DC[(K,W)], numPartitions: Int): DC[(K,V)] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.subtractByKey(right, numPartitions)
+    }
+    new MultiInputDC[(K,V), K](Seq(self, other), resultFunc)
+  }
+
   def keys: DC[K] = {
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.keys, Seq("keys"))
   }

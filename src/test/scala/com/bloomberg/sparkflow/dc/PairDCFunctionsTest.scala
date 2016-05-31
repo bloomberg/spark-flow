@@ -209,6 +209,25 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     expected should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("subtractByKey"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.subtractByKey(right)
+
+    val expected = Seq((2,3))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("subtractByKey(numPartitions)"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.subtractByKey(right, 2)
+
+    val expected = Seq((2,3))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("keys"){
     val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
     val result = input.keys
