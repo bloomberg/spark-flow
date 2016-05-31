@@ -18,6 +18,14 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions),func)
   }
 
+  def countApproxDistinctByKey(relativeSD: Double = 0.05): DC[(K, Long)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD), Seq("countApproxDistinctByKey", relativeSD.toString))
+  }
+
+  def countApproxDistinctByKey(relativeSD: Double, numPartitions: Int): DC[(K, Long)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD, numPartitions), Seq("countApproxDistinctByKey", relativeSD.toString, numPartitions.toString))
+  }
+
   def groupByKey(): DC[(K, Iterable[V])] = {
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(), Seq("groupByKey"))
   }
