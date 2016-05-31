@@ -14,6 +14,10 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func)
   }
 
+  def reduceByKey(func: (V, V) => V, numPartitions: Int): DC[(K, V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), Seq(func.toString, numPartitions.toString))
+  }
+
   def groupByKey(): DC[(K, Iterable[V])] = {
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(), Seq("groupByKey"))
   }
@@ -29,6 +33,69 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       left.join(right)
     }
     new MultiInputDC[(K, (V, W)), K](Seq(self, other), resultFunc)
+  }
+
+  def join[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, W))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.join(right, numPartitions)
+    }
+    new MultiInputDC[(K, (V, W)), K](Seq(self, other), resultFunc)
+  }
+
+  def leftOuterJoin[W](other: DC[(K,W)]): DC[(K, (V, Option[W]))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.leftOuterJoin(right)
+    }
+    new MultiInputDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
+  }
+
+  def leftOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, Option[W]))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.leftOuterJoin(right, numPartitions)
+    }
+    new MultiInputDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
+  }
+
+  def rightOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], W))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.rightOuterJoin(right)
+    }
+    new MultiInputDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
+  }
+
+  def rightOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], W))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.rightOuterJoin(right, numPartitions)
+    }
+    new MultiInputDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
+  }
+
+  def fullOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], Option[W]))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.fullOuterJoin(right)
+    }
+    new MultiInputDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
+  }
+
+  def fullOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], Option[W]))] = {
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.fullOuterJoin(right, numPartitions)
+    }
+    new MultiInputDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
   def cogroup[W](other: DC[(K,W)]): DC[(K, (Iterable[V], Iterable[W]))] = {

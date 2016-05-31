@@ -17,6 +17,14 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("reduceByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.reduceByKey(_ + _, 2)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("groupByKey"){
     val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
     val result = input.groupByKey()
@@ -39,6 +47,73 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
 
     val expected = Seq((1,(1, "a")), (1,(2,"a")), (2,(3,"b")), (2,(4,"b")))
     expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("join(numPartitions)"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val right = parallelize(Seq((1,"a"), (2,"b")))
+    val result = left.join(right, 2)
+
+    val expected = Seq((1,(1, "a")), (1,(2,"a")), (2,(3,"b")), (2,(4,"b")))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("leftOuterJoin"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.leftOuterJoin(right)
+
+    val expected = Seq((1,(1,Some("a"))), (1,(2,Some("a"))), (2,(3,None)))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("leftOuterJoin(numPartitions)"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.leftOuterJoin(right, 2)
+
+    val expected = Seq((1,(1,Some("a"))), (1,(2,Some("a"))), (2,(3,None)))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("rightOuterJoin"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.rightOuterJoin(right)
+
+    val expected = Seq((1,(Some(1),"a")), (1,(Some(2),"a")), (3,(None,"b")))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("rightOuterJoin(numPartitions)"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.rightOuterJoin(right, 2)
+
+    val expected = Seq((1,(Some(1),"a")), (1,(Some(2),"a")), (3,(None,"b")))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("fullOuterJoin"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.fullOuterJoin(right)
+
+    val expected = Seq((1,(Some(1),Some("a"))), (1,(Some(2),Some("a"))), (2,(Some(3),None)), (3,(None,Some("b"))))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("fullOuterJoin(numPartitions)"){
+    val left = parallelize(Seq((1,1), (1,2), (2,3)))
+    val right = parallelize(Seq((1,"a"), (3,"b")))
+    val result = left.fullOuterJoin(right, 2)
+
+    val expected = Seq((1,(Some(1),Some("a"))), (1,(Some(2),Some("a"))), (2,(Some(3),None)), (3,(None,Some("b"))))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
   }
 
   test("cogroup(other)"){
