@@ -57,6 +57,10 @@ package object sparkflow {
     new ParallelCollectionDC(seq)
   }
 
+  def parallelize[T:ClassTag](seq: Seq[T], numSlices: Int): DC[T] = {
+    new ParallelCollectionDC(seq, Some(numSlices))
+  }
+
   def textFile(path: String) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path)
     new SourceDC[String](path, sourceFunc, "textFile")
