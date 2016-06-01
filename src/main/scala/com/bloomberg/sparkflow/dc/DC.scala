@@ -82,6 +82,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.repartition(numPartitions), Seq("repartition", numPartitions.toString))
   }
 
+  def coalesce(numPartitions: Int, shuffle: Boolean = false): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.coalesce(numPartitions, shuffle), Seq("coalesce", numPartitions.toString, shuffle.toString))
+  }
+
   def getRDD(sc: SparkContext): RDD[T] = {
 
     synchronized {

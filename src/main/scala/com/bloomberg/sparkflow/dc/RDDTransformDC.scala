@@ -19,6 +19,10 @@ private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
     this(prev, f, Seq(hashClass(hashTarget)))
   }
 
+  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef, hashTargets: Seq[String]) = {
+    this(prev, f, hashClass(hashTarget) +: hashTargets)
+  }
+
   def computeSparkResults(sc: SparkContext) = {
     val rdd = f(prev.getRDD(sc))
     (rdd, prev.getSchema(sc))
