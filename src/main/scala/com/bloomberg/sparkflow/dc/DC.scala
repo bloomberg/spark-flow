@@ -95,8 +95,6 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
             case Some((resultRdd, resultSchema)) => assignSparkResults(resultRdd, resultSchema)
             case None =>
               val (resultRDD, resultSchema) = computeSparkResults(sc)
-              resultRDD.persist(defaultPersistence)
-              resultRDD.count()
               saveCheckpoint(checkpointPath, resultRDD, resultSchema, dataFrameBacked)
               loadCheckpoint[T](checkpointPath, sc, dataFrameBacked) match {
                 case Some((rRDD, rSchema)) => assignSparkResults(rRDD, rSchema)

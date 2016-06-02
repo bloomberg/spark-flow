@@ -4,10 +4,11 @@ package com.bloomberg.sparkflow.dc
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SQLContext, DataFrame, Row}
+import org.apache.spark.sql.{SaveMode, SQLContext, DataFrame, Row}
 import org.apache.spark.sql.types.StructType
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 /**
   * Created by ngoehausen on 5/18/16.
@@ -17,11 +18,15 @@ object Util {
 
   private[dc] def saveCheckpoint[T:ClassTag](checkpointPath: String, rdd: RDD[T], schema: Option[StructType], isDataFrame: Boolean) = {
     assert(rdd != null)
+    val sc = rdd.context
     if (schema.isDefined && isDataFrame){
-      val sqlContext = SQLContext.getOrCreate(rdd.context)
+      val sqlContext = SQLContext.getOrCreate(sc)
       val rowRDD = rdd.asInstanceOf[RDD[Row]]
-      sqlContext.createDataFrame(rowRDD, schema.get).write.parquet(checkpointPath)
+      sqlContext.createDataFrame(rowRDD, schema.get).write.mode(SaveMode.Overwrite).parquet(checkpointPath)
     } else {
+      if (pathExists(checkpointPath, sc)){
+        deletePath(checkpointPath, sc)
+      }
       rdd.saveAsObjectFile(checkpointPath)
     }
 
@@ -47,7 +52,11 @@ object Util {
   private def attemptDFLoad(checkpointPath: String,sc: SparkContext): Option[DataFrame] = {
     if (pathExists(checkpointPath, sc)) {
       val sqlContext = SQLContext.getOrCreate(sc)
-      Some(sqlContext.read.parquet(checkpointPath))
+      Try {
+        val df = sqlContext.read.parquet(checkpointPath)
+        df.count()
+        df
+      }.toOption
     } else {
       None
     }
@@ -57,7 +66,11 @@ object Util {
     val path = new Path(checkpointPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) {
-      Some(sc.objectFile[T](checkpointPath))
+      Try{
+        val rdd = sc.objectFile[T](checkpointPath)
+        rdd.count()
+        rdd
+      }.toOption
     } else {
       None
     }
@@ -68,6 +81,12 @@ object Util {
     val path = new Path(dir)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     fs.exists(path)
+  }
+
+  def deletePath(dir: String, sc: SparkContext) = {
+    val path = new Path(dir)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    fs.delete(path, true)
   }
 
 }
