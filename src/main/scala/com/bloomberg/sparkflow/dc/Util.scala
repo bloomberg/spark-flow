@@ -1,8 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
 
-import java.util.UUID
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -10,7 +8,6 @@ import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 import org.apache.spark.sql.types.StructType
 
 import scala.reflect.ClassTag
-import scala.util.Try
 
 /**
   * Created by ngoehausen on 5/18/16.
@@ -48,12 +45,12 @@ object Util {
   }
 
   private def attemptDFLoad(checkpointPath: String,sc: SparkContext): Option[DataFrame] = {
-    Try{
+    if (pathExists(checkpointPath, sc)) {
       val sqlContext = SQLContext.getOrCreate(sc)
-      val attemptDF = sqlContext.read.parquet(checkpointPath)
-      attemptDF.first()
-      attemptDF
-    }.toOption
+      Some(sqlContext.read.parquet(checkpointPath))
+    } else {
+      None
+    }
   }
 
   private def attemptRDDLoad[T: ClassTag](checkpointPath: String, sc: SparkContext): Option[RDD[T]] = {
