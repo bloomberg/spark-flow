@@ -78,6 +78,14 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     this
   }
 
+  def distinct(): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.distinct(), Seq("distinct"))
+  }
+
+  def distinct(numPartitions: Int): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.distinct(numPartitions), Seq("distinct"))
+  }
+
   def repartition(numPartitions: Int): DC[T] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.repartition(numPartitions), Seq("repartition", numPartitions.toString))
   }
