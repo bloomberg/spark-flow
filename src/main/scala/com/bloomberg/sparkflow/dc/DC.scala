@@ -101,6 +101,13 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
+  def intersection(other: DC[T], numPartitions: Int): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.intersection(right, numPartitions)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
   def glom(): DC[Array[T]] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.glom(), Seq("glom"))
   }
@@ -108,6 +115,13 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
   def cartesian[U: ClassTag](other: DC[U]): DC[(T, U)] = {
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.cartesian(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def zip[U: ClassTag](other: DC[U]): DC[(T, U)] = {
+    val resultFunc = (left: RDD[T], right: RDD[U]) => {
+      left.zip(right)
     }
     new MultiInputDC(this, other, resultFunc)
   }
