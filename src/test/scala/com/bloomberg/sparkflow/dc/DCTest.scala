@@ -67,4 +67,27 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     result.getRDD(sc).partitions.size shouldEqual 10
   }
 
+  test("intersection"){
+    val left = parallelize(Seq(1,2,3))
+    val right = parallelize(Seq(2,3,4))
+    val result = left.intersection(right)
+
+    Seq(2,3) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("glom"){
+    val input = parallelize(Seq(1,1,2), 1)
+    val result = input.glom()
+
+    Seq(Array(1,1,2)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("cartesian"){
+    val left = parallelize(Seq(1,2))
+    val right = parallelize(Seq(3,4))
+    val result = left.cartesian(right)
+
+    Seq((1,3), (1,4), (2,3), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
 }

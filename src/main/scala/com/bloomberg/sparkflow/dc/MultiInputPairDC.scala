@@ -9,16 +9,16 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 4/19/16.
   */
-class MultiInputDC[T:ClassTag, U:ClassTag, V:ClassTag](left: DC[U], right: DC[V],
-                                             f: (RDD[U], RDD[V]) => RDD[T])
-  extends DC[T](Seq(left, right)){
+class MultiInputPairDC[T: ClassTag, K:ClassTag](inputs: Seq[DC[_ <: Product2[K, _]]],
+                                                f: (Seq[RDD[_ <: Product2[K, _]]]) => RDD[T])
+  extends DC[T](inputs){
 
   override def computeSignature() = {
-    Hashing.hashString(left.getSignature.mkString("") + right.getSignature.mkString("") + Hashing.hashClass(f))
+    Hashing.hashString(inputs.map(_.getSignature).mkString("") + Hashing.hashClass(f))
   }
 
   override def computeSparkResults(sc: SparkContext) = {
-    val rdd = f(left.getRDD(sc), right.getRDD(sc))
+    val rdd = f(inputs.map(_.getRDD(sc)))
     (rdd, None)
   }
 

@@ -40,7 +40,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.join(right)
     }
-    new MultiInputDC[(K, (V, W)), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
   }
 
   def join[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, W))] = {
@@ -49,7 +49,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.join(right, numPartitions)
     }
-    new MultiInputDC[(K, (V, W)), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
   }
 
   def leftOuterJoin[W](other: DC[(K,W)]): DC[(K, (V, Option[W]))] = {
@@ -58,7 +58,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.leftOuterJoin(right)
     }
-    new MultiInputDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
   }
 
   def leftOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, Option[W]))] = {
@@ -67,7 +67,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.leftOuterJoin(right, numPartitions)
     }
-    new MultiInputDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
   }
 
   def rightOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], W))] = {
@@ -76,7 +76,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.rightOuterJoin(right)
     }
-    new MultiInputDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
   }
 
   def rightOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], W))] = {
@@ -85,7 +85,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.rightOuterJoin(right, numPartitions)
     }
-    new MultiInputDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
   }
 
   def fullOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], Option[W]))] = {
@@ -94,7 +94,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.fullOuterJoin(right)
     }
-    new MultiInputDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
   def fullOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], Option[W]))] = {
@@ -103,7 +103,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.fullOuterJoin(right, numPartitions)
     }
-    new MultiInputDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
   def cogroup[W](other: DC[(K,W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
@@ -112,7 +112,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.cogroup(right)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
   }
 
   def cogroup[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])
@@ -123,7 +123,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
       first.cogroup(second, third)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
   }
 
   def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)]): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
@@ -134,7 +134,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val fourth = rdds(3).asInstanceOf[RDD[(K,W3)]]
       first.cogroup(second, third, fourth)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
   }
 
   def cogroup[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W]))] = {
@@ -143,7 +143,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.cogroup(right, numPartitions)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
   }
 
   def cogroup[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)], numPartitions: Int)
@@ -154,7 +154,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
       first.cogroup(second, third, numPartitions)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
   }
 
   def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
@@ -165,7 +165,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val fourth = rdds(3).asInstanceOf[RDD[(K,W3)]]
       first.cogroup(second, third, fourth, numPartitions)
     }
-    new MultiInputDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
+    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
   }
 
   def groupWith[W](other: DC[(K, W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
@@ -187,7 +187,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.subtractByKey(right)
     }
-    new MultiInputDC[(K,V), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K,V), K](Seq(self, other), resultFunc)
   }
 
   def subtractByKey[W: ClassTag](other: DC[(K,W)], numPartitions: Int): DC[(K,V)] = {
@@ -196,7 +196,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
       left.subtractByKey(right, numPartitions)
     }
-    new MultiInputDC[(K,V), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[(K,V), K](Seq(self, other), resultFunc)
   }
 
   def keys: DC[K] = {
