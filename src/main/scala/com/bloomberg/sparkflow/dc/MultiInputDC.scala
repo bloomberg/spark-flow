@@ -14,7 +14,7 @@ class MultiInputDC[T:ClassTag, U:ClassTag, V:ClassTag](left: DC[U], right: DC[V]
   extends DC[T](Seq(left, right)){
 
   override def computeSignature() = {
-    Hashing.hashString(left.getSignature.mkString("") + right.getSignature.mkString("") + Hashing.hashClass(f))
+    Hashing.hashString(left.getSignature + right.getSignature + Hashing.hashClass(f))
   }
 
   override def computeSparkResults(sc: SparkContext) = {
