@@ -207,4 +207,12 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.values, Seq("values"))
   }
 
+  def sortByKey(ascending: Boolean = true): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.sortByKey(ascending), Seq("sortByKey", ascending.toString))
+  }
+
+  def sortByKey(ascending: Boolean, numPartitions: Int): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.sortByKey(ascending, numPartitions), Seq("sortByKey", ascending.toString, numPartitions.toString))
+  }
+
 }
