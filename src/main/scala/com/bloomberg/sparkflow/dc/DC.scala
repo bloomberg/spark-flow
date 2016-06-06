@@ -146,6 +146,12 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
+  def mapPartitions[U: ClassTag](
+                                  f: Iterator[T] => Iterator[U],
+                                  preservesPartitioning: Boolean = false): DC[U] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.mapPartitions(f, preservesPartitioning), f, Seq(preservesPartitioning.toString))
+  }
+
   def getRDD(sc: SparkContext): RDD[T] = {
 
     synchronized {

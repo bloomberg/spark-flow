@@ -1,5 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
+import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -205,6 +206,14 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
 
   def values: DC[V] = {
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.values, Seq("values"))
+  }
+
+  def partitionBy(partitioner: Partitioner): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.partitionBy(partitioner), Seq("partitionBy", partitioner.numPartitions.toString))
+  }
+
+  def partitionByKey(): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.partitionBy(new HashPartitioner(rdd.partitions.length)), Seq("partitionByKey"))
   }
 
 }
