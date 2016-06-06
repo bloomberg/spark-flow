@@ -78,12 +78,52 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     this
   }
 
+  def distinct(): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.distinct(), Seq("distinct"))
+  }
+
+  def distinct(numPartitions: Int): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.distinct(numPartitions), Seq("distinct", numPartitions.toString))
+  }
+
   def repartition(numPartitions: Int): DC[T] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.repartition(numPartitions), Seq("repartition", numPartitions.toString))
   }
 
   def coalesce(numPartitions: Int, shuffle: Boolean = false): DC[T] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.coalesce(numPartitions, shuffle), Seq("coalesce", numPartitions.toString, shuffle.toString))
+  }
+
+  def intersection(other: DC[T]): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.intersection(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def intersection(other: DC[T], numPartitions: Int): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.intersection(right, numPartitions)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def glom(): DC[Array[T]] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.glom(), Seq("glom"))
+  }
+
+  def cartesian[U: ClassTag](other: DC[U]): DC[(T, U)] = {
+    val resultFunc = (left: RDD[T], right: RDD[U]) => {
+      left.cartesian(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def zip[U: ClassTag](other: DC[U]): DC[(T, U)] = {
+    val resultFunc = (left: RDD[T], right: RDD[U]) => {
+      left.zip(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
   }
 
   def getRDD(sc: SparkContext): RDD[T] = {
