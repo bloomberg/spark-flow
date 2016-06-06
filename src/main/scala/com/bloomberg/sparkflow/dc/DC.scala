@@ -6,6 +6,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.mllib.rdd.RDDFunctions._
 import scala.language.implicitConversions
 
 import scala.reflect.ClassTag
@@ -124,6 +125,25 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
       left.zip(right)
     }
     new MultiInputDC(this, other, resultFunc)
+  }
+
+  def sortBy[K](
+                 f: (T) => K,
+                 ascending: Boolean = true)
+               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sortBy(f, ascending), f, Seq("sortBy", ascending.toString))
+  }
+
+  def sortBy[K](
+                 f: (T) => K,
+                 ascending: Boolean,
+                 numPartitions: Int)
+               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq("sortBy", ascending.toString, numPartitions.toString))
+  }
+
+  def sliding(windowSize: Int): DC[Array[T]] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
   def getRDD(sc: SparkContext): RDD[T] = {
