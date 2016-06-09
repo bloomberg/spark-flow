@@ -120,6 +120,14 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
+  def groupBy[K](f: T => K)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f), f, Seq("groupBy"))
+  }
+
+  def groupBy[K](f: T => K, numPartitions: Int)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f, numPartitions), f, Seq("groupBy", numPartitions.toString))
+  }
+
   def zip[U: ClassTag](other: DC[U]): DC[(T, U)] = {
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.zip(right)

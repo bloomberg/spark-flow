@@ -99,6 +99,21 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     Seq((1,3), (1,4), (2,3), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("groupBy"){
+    val input = parallelize(1 to 5)
+    val result = input.groupBy(x => x % 3)
+
+    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+  }
+
+  test("groupBy(numPartitions)"){
+    val input = parallelize(1 to 5)
+    val result = input.groupBy(x => x % 3, 2)
+
+    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("zip"){
     val left = parallelize(Seq(1,2,3))
     val right = left.map(x => x * 2)
