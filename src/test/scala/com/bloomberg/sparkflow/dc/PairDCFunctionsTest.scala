@@ -257,4 +257,21 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     Seq(1, 2, 3, 1) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("partitionBy"){
+    val input = parallelize(Seq((2,3), (1,2), (1,1), (2,1)), 2)
+
+    val partitioned = input.partitionByKey()
+
+    val result = partitioned.mapPartitions(in => Iterator(in.toList))
+
+    Seq(List((1,2), (1,1)), List((2,3), (2,1))) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("keyBy"){
+    val input = parallelize(Seq("dog", "fish", "horse"))
+    val result = input.keyBy(_.size)
+
+    Seq((3, "dog"), (4, "fish"), (5, "horse")) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
 }
