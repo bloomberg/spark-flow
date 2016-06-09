@@ -1,5 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
+import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -213,6 +214,20 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
 
   def sortByKey(ascending: Boolean, numPartitions: Int): DC[(K,V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.sortByKey(ascending, numPartitions), Seq("sortByKey", ascending.toString, numPartitions.toString))
+  }
+
+  def partitionBy(partitioner: Partitioner): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.partitionBy(partitioner), Seq("partitionBy", partitioner.numPartitions.toString))
+  }
+
+  def partitionByKey(): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.partitionBy(new HashPartitioner(rdd.partitions.length)), Seq("partitionByKey"))
+  }
+
+
+  def repartitionAndSortWithinPartitions(partitioner: Partitioner): DC[(K, V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.repartitionAndSortWithinPartitions(partitioner), Seq("repartitionAndSortWithinPartitions", partitioner.numPartitions.toString))
+
   }
 
 }
