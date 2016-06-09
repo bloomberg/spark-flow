@@ -11,12 +11,20 @@ import scala.reflect.ClassTag
 class PairDCFunctions[K,V](self: DC[(K,V)])
     (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
 
+  def foldByKey(zeroValue: V)(func: (V,V) => V): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue)(func), func, Seq("foldByKey", zeroValue.toString))
+  }
+
+  def foldByKey(zeroValue: V, numPartitions: Int)(func: (V,V) => V): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue, numPartitions)(func), func, Seq("foldByKey", zeroValue.toString, numPartitions.toString))
+  }
+
   def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
-    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func)
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func, Seq("reduceByKey"))
   }
 
   def reduceByKey(func: (V, V) => V, numPartitions: Int): DC[(K, V)] = {
-    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), func, Seq(numPartitions.toString))
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), func, Seq("reduceByKey", numPartitions.toString))
   }
 
   def countApproxDistinctByKey(relativeSD: Double = 0.05): DC[(K, Long)] = {

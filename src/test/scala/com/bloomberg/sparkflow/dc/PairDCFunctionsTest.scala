@@ -9,6 +9,20 @@ import com.bloomberg.sparkflow._
   */
 class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("foldByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("foldByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0, 2)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
 
   test("reduceByKey"){
     val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
