@@ -216,4 +216,10 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.partitionBy(new HashPartitioner(rdd.partitions.length)), Seq("partitionByKey"))
   }
 
+
+  def repartitionAndSortWithinPartitions(partitioner: Partitioner): DC[(K, V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.repartitionAndSortWithinPartitions(partitioner), Seq("repartitionAndSortWithinPartitions", partitioner.numPartitions.toString))
+
+  }
+
 }

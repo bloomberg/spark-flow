@@ -142,6 +142,10 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq("sortBy", ascending.toString, numPartitions.toString))
   }
 
+  def keyBy[K](f: T => K): DC[(K,T)] ={
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.keyBy(f), f, Seq("keyBy"))
+  }
+
   def sliding(windowSize: Int): DC[Array[T]] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
@@ -212,6 +216,11 @@ object DC {
   implicit def dcToPairDCFunctions[K, V](dc: DC[(K, V)])
     (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null): PairDCFunctions[K, V] = {
     new PairDCFunctions(dc)
+  }
+
+  implicit def dcToSecondaryPairDCFunctions[K, K2, V](dc: DC[((K,K2), V)])
+    (implicit kt: ClassTag[K], k2t: ClassTag[K2],vt: ClassTag[V], ord: Ordering[(K,K2)] = null): SecondaryPairDCFunctions[K, K2, V] = {
+    new SecondaryPairDCFunctions(dc)
   }
 
   implicit def dcToDFFunctions(dc: DC[Row]): DataFrameDCFunctions = {
