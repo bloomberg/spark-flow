@@ -44,12 +44,14 @@ package object sparkflow {
     * @since 1.3.0
     */
 
-  implicit def rddToDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
-    val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
-    val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
-    val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
-    sqlContext.createDataFrame(rowRDD, schema)
-  }
+//  implicit def rddToDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
+//    val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
+//    val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
+//    val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
+//    import sqlContext.implicits._
+//
+//    sqlContext.createDataFrame(rowRDD, schema)
+//  }
 
   def read = new DCDataFrameReader
 

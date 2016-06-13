@@ -2,7 +2,7 @@ package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{SQLContext, Row}
 
 import scala.reflect.runtime.universe.TypeTag
 import com.bloomberg.sparkflow._
@@ -14,6 +14,8 @@ import com.bloomberg.sparkflow._
 class RDDToDFTransformDC[T <: Product : TypeTag](val prev: DC[T])extends DC[Row](Seq(prev)) {
 
   def computeSparkResults(sc: SparkContext) = {
+    val sqlContext = SQLContext.getOrCreate(sc)
+    import sqlContext.implicits._
     val df = prev.getRDD(sc).toDF()
     (df.rdd, Some(df.schema))
   }

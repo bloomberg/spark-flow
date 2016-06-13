@@ -4,7 +4,7 @@ organization := "com.bloomberg"
 
 version := "0.0.5-SNAPSHOT"
 
-val SPARK_VERSION = "1.4.1"
+val SPARK_VERSION = "2.0.0-preview"
 val JSON4S_VERSION = "3.3.0"
 
 scalaVersion := "2.10.4"
@@ -17,7 +17,7 @@ val scalaExc = ExclusionRule(organization="org.scala-lang")
 val hadoopExc = ExclusionRule(organization="org.apache.hadoop")
 
 libraryDependencies ++= Seq(
-//  "org.ow2.asm" % "asm" % "5.1" withSources(),
+  "org.ow2.asm" % "asm" % "5.1" withSources(),
   "org.apache.spark" %% "spark-core" % SPARK_VERSION % "provided",
   "org.apache.spark" %% "spark-sql" % SPARK_VERSION % "provided",
   "org.apache.spark" %% "spark-mllib" % SPARK_VERSION % "provided",

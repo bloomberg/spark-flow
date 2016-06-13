@@ -140,7 +140,7 @@ object ClassExploration {
   case class OwnerName(owner: String, name: String)
 
 
-  class ClassMethodExplorer(methodName: String, ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor {
+  class ClassMethodExplorer(methodName: String, ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor(ASM5) {
 
     override def visitMethod(
                               access: Int,
@@ -156,53 +156,14 @@ object ClassExploration {
       }
     }
 
-    /** As seen from class ClassMethodExplorer, the missing signatures are as follows.
-      *  For convenience, these are usable as stub implementations.
-      */
-    def visit(x$1: Int,x$2: Int,x$3: String,x$4: String,x$5: String,x$6: Array[String]): Unit = {}
-    def visitAnnotation(x$1: String,x$2: Boolean): org.objectweb.asm.AnnotationVisitor = {null}
-    def visitAttribute(x$1: org.objectweb.asm.Attribute): Unit = {}
-    def visitEnd(): Unit = {}
-    def visitField(x$1: Int,x$2: String,x$3: String,x$4: String,x$5: Any): org.objectweb.asm.FieldVisitor = {null}
-    def visitInnerClass(x$1: String,x$2: String,x$3: String,x$4: Int): Unit = {}
-    def visitOuterClass(x$1: String,x$2: String,x$3: String): Unit = {}
-    def visitSource(x$1: String,x$2: String): Unit = {}
-
   }
 
-  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor {
+  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor(ASM5) {
 
-    override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String) {
+    override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean) {
       ownerNames.add(OwnerName(cleanClassName(owner), name))
     }
 
-
-    /** As seen from class MethodExplorer, the missing signatures are as follows.
-      *  For convenience, these are usable as stub implementations.
-      */
-    def visitAnnotation(x$1: String,x$2: Boolean): org.objectweb.asm.AnnotationVisitor = {null}
-    def visitAnnotationDefault(): org.objectweb.asm.AnnotationVisitor = {null}
-    def visitAttribute(x$1: org.objectweb.asm.Attribute): Unit = {}
-    def visitCode(): Unit = {}
-    def visitEnd(): Unit = {}
-    def visitFieldInsn(x$1: Int,x$2: String,x$3: String,x$4: String): Unit = {}
-    def visitFrame(x$1: Int,x$2: Int,x$3: Array[Object],x$4: Int,x$5: Array[Object]): Unit = {}
-    def visitIincInsn(x$1: Int,x$2: Int): Unit = {}
-    def visitInsn(x$1: Int): Unit = {}
-    def visitIntInsn(x$1: Int,x$2: Int): Unit = {}
-    def visitJumpInsn(x$1: Int,x$2: org.objectweb.asm.Label): Unit = {}
-    def visitLabel(x$1: org.objectweb.asm.Label): Unit = {}
-    def visitLdcInsn(x$1: Any): Unit = {}
-    def visitLineNumber(x$1: Int,x$2: org.objectweb.asm.Label): Unit = {}
-    def visitLocalVariable(x$1: String,x$2: String,x$3: String,x$4: org.objectweb.asm.Label,x$5: org.objectweb.asm.Label,x$6: Int): Unit = {}
-    def visitLookupSwitchInsn(x$1: org.objectweb.asm.Label,x$2: Array[Int],x$3: Array[org.objectweb.asm.Label]): Unit = {}
-    def visitMaxs(x$1: Int,x$2: Int): Unit = {}
-    def visitMultiANewArrayInsn(x$1: String,x$2: Int): Unit = {}
-    def visitParameterAnnotation(x$1: Int,x$2: String,x$3: Boolean): org.objectweb.asm.AnnotationVisitor = {null}
-    def visitTableSwitchInsn(x$1: Int,x$2: Int,x$3: org.objectweb.asm.Label,x$4: Array[org.objectweb.asm.Label]): Unit = {}
-    def visitTryCatchBlock(x$1: org.objectweb.asm.Label,x$2: org.objectweb.asm.Label,x$3: org.objectweb.asm.Label,x$4: String): Unit = {}
-    def visitTypeInsn(x$1: Int,x$2: String): Unit = {}
-    def visitVarInsn(x$1: Int,x$2: Int): Unit = {}
   }
 
 }
