@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.mllib.rdd.RDDFunctions._
 import scala.language.implicitConversions
@@ -15,34 +15,38 @@ import com.bloomberg.sparkflow._
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect._
 import sparkflow.dc.Util._
+import sparkflow._
 
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](deps) {
+abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T]) extends Dependency[T](deps) {
 
-  private var rdd: RDD[T] = _
+  private var dataset: Dataset[T] = _
   private var checkpointed = false
-  private var schema: Option[StructType] = None
   private var assigned = false
 
-  protected def computeSparkResults(sc: SparkContext): (RDD[T], Option[StructType])
+  protected def computeDataset(spark: SparkSession): Dataset[T]
 
 
-  def map[U: ClassTag](f: T => U): DC[U] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.map(f), f)
+  def map[U: ClassTag](f: T => U)(implicit uEncoder: Encoder[U]): DC[U] = {
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.map(f), f)
   }
 
   def filter(f: T => Boolean): DC[T] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.filter(f), f)
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.filter(f), f)
   }
 
-  def flatMap[U: ClassTag](f: T => TraversableOnce[U]): DC[U] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.flatMap(f), f)
+  def flatMap[U: ClassTag](f: T => TraversableOnce[U])(implicit uEncoder: Encoder[U]): DC[U] = {
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.flatMap(f), f)
   }
 
-  def zipWithUniqueId(): DC[(T, Long)] = {
+  def zipWithUniqueId()(implicit tupEncoder: Encoder[(T,Long)]): DC[(T, Long)] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
+  }
+
+  def groupByKey[K: Encoder](func: T => K): DC[(K, Iterable[T])] = {
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.groupByKey(func), Seq("groupByKey"))
   }
 
   def sample(
@@ -109,18 +113,18 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
-  def glom(): DC[Array[T]] = {
+  def glom()(implicit aEncoder: Encoder[Array[T]]): DC[Array[T]] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.glom(), Seq("glom"))
   }
 
-  def cartesian[U: ClassTag](other: DC[U]): DC[(T, U)] = {
+  def cartesian[U: ClassTag](other: DC[U])(implicit tuEncoder: Encoder[(T,U)]): DC[(T, U)] = {
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.cartesian(right)
     }
     new MultiInputDC(this, other, resultFunc)
   }
 
-  def zip[U: ClassTag](other: DC[U]): DC[(T, U)] = {
+  def zip[U: ClassTag](other: DC[U])(implicit tuEncoder: Encoder[(T,U)]): DC[(T, U)] = {
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.zip(right)
     }
@@ -142,66 +146,68 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq("sortBy", ascending.toString, numPartitions.toString))
   }
 
-  def keyBy[K](f: T => K): DC[(K,T)] ={
+  def keyBy[K](f: T => K)(implicit kTEncoder: Encoder[(K,T)]): DC[(K,T)] ={
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.keyBy(f), f, Seq("keyBy"))
   }
 
-  def sliding(windowSize: Int): DC[Array[T]] = {
+  def sliding(windowSize: Int)(implicit aEncoder: Encoder[Array[T]]): DC[Array[T]] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
   def mapPartitions[U: ClassTag](
                                   f: Iterator[T] => Iterator[U],
-                                  preservesPartitioning: Boolean = false): DC[U] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.mapPartitions(f, preservesPartitioning), f, Seq(preservesPartitioning.toString))
+                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.mapPartitions(f), f, Seq(preservesPartitioning.toString))
   }
 
-  def getRDD(sc: SparkContext): RDD[T] = {
+  def getRDD(spark: SparkSession): RDD[T] = {
+    getDataset(spark).rdd
+  }
 
+  def getDF(spark: SparkSession): DataFrame = {
+    getDataset(spark).toDF()
+  }
+
+  def getDataset(spark: SparkSession): Dataset[T] = {
     synchronized {
+      if(sparkflow.sqlContext == null){
+        sparkflow.sqlContext = SQLContext.getOrCreate(spark.sparkContext)
+      }
       if (!assigned) {
         if (checkpointed) {
-          loadCheckpoint[T](checkpointPath, sc, dataFrameBacked) match {
-            case Some((resultRdd, resultSchema)) => assignSparkResults(resultRdd, resultSchema)
+          loadCheckpoint[T](checkpointPath, spark) match {
+            case Some(resultDataset) => assignSparkResults(resultDataset)
             case None =>
-              val (resultRDD, resultSchema) = computeSparkResults(sc)
-              saveCheckpoint(checkpointPath, resultRDD, resultSchema, dataFrameBacked)
-              loadCheckpoint[T](checkpointPath, sc, dataFrameBacked) match {
-                case Some((rRDD, rSchema)) => assignSparkResults(rRDD, rSchema)
+              val resultDataset = computeDataset(spark)
+              saveCheckpoint(checkpointPath, resultDataset)
+              loadCheckpoint[T](checkpointPath, spark) match {
+                case Some(ds) => assignSparkResults(ds)
                 case None => throw new RuntimeException(s"failed to persist to: $checkpointPath")
               }
           }
         } else {
-          assignComputedSparkResults(sc)
+          assignComputedSparkResults(spark)
         }
       }
     }
-    rdd
-  }
-
-  def getSchema(sc: SparkContext): Option[StructType] = {
-    if(!assigned) {
-      getRDD(sc)
-    }
-    schema
+    dataset
   }
 
   private def checkpointPath = new File(checkpointDir, getSignature).toString
 
-  private def assignSparkResults(resultRdd: RDD[T], resultSchema: Option[StructType]) = {
+  private def assignSparkResults(resultDataset: Dataset[T]) = {
     synchronized {
       assert(!assigned)
-      this.rdd = resultRdd
-      this.schema = resultSchema
+      this.dataset = resultDataset
       assigned = true
     }
   }
 
-  private def assignComputedSparkResults(sc: SparkContext) = {
+  private def assignComputedSparkResults(spark: SparkSession) = {
     synchronized {
       assert(!assigned)
-      val (resultRdd, resultSchema) = computeSparkResults(sc)
-      assignSparkResults(resultRdd, resultSchema)
+      val resultDataset = computeDataset(spark)
+      assignSparkResults(resultDataset)
     }
   }
 
@@ -214,7 +220,7 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 object DC {
 
   implicit def dcToPairDCFunctions[K, V](dc: DC[(K, V)])
-    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null): PairDCFunctions[K, V] = {
+    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null, kvEncoder: Encoder[(K,V)], klEncoder: Encoder[(K,Long)]): PairDCFunctions[K, V] = {
     new PairDCFunctions(dc)
   }
 
@@ -223,7 +229,7 @@ object DC {
     new SecondaryPairDCFunctions(dc)
   }
 
-  implicit def dcToDFFunctions(dc: DC[Row]): DataFrameDCFunctions = {
+  implicit def dcToDFFunctions(dc: DC[Row])(implicit rEncoder: Encoder[Row]): DataFrameDCFunctions = {
     new DataFrameDCFunctions(dc)
   }
 

@@ -19,24 +19,21 @@ import scala.language.implicitConversions
 /**
   * Created by ngoehausen on 3/24/16.
   */
-package object sparkflow {
+package object sparkflow extends SQLImplicits {
+
+  private[sparkflow] var sqlContext: SQLContext = null
+
+  protected override def _sqlContext: SQLContext = sqlContext
 
 
-//  private[sparkflow] var sqlContext: SQLContext = null
+  //  // This must live here to preserve binary compatibility with Spark < 1.5.
+//  implicit class StringToColumn(val sc: StringContext) {
+//    def $(args: Any*): ColumnName = {
+//      new ColumnName(sc.s(args: _*))
+//    }
+//  }
 
-//  // This must live here to preserve binary compatibility with Spark < 1.5.
-  implicit class StringToColumn(val sc: StringContext) {
-    def $(args: Any*): ColumnName = {
-      new ColumnName(sc.s(args: _*))
-    }
-  }
 
-  /**
-    * An implicit conversion that turns a Scala `Symbol` into a [[Column]].
-    *
-    * @since 1.3.0
-    */
-  implicit def symbolToColumn(s: Symbol): ColumnName = new ColumnName(s.name)
 
   /**
     * Creates a DataFrame from an RDD of case classes or tuples.

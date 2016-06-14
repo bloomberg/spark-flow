@@ -4,6 +4,7 @@ import com.bloomberg.sparkflow.serialization.Hashing
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import Hashing._
+import org.apache.spark.sql.SparkSession
 
 import scala.reflect.ClassTag
 
@@ -14,15 +15,15 @@ class DRImpl[T: ClassTag, U: ClassTag](prev: DC[T], f: RDD[T] => U) extends DR[U
 
   private var result: U = _
 
-  override def get(sc: SparkContext) = {
+  override def get(spark: SparkSession) = {
     if (result == null){
-      result = computeResult(sc)
+      result = computeResult(spark)
     }
     result
   }
 
-  private def computeResult(sc: SparkContext) = {
-    f(prev.getRDD(sc))
+  private def computeResult(spark: SparkSession) = {
+    f(prev.getRDD(spark))
   }
 
   override def computeSignature() = {

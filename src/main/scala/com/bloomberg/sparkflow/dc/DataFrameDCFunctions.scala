@@ -2,21 +2,15 @@ package com.bloomberg.sparkflow.dc
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
+import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 4/27/16.
   */
-class DataFrameDCFunctions(self: DC[Row]) {
-
-  def getDF(sc: SparkContext): DataFrame = {
-    val sqlContext = SQLContext.getOrCreate(sc)
-    val schema = self.getSchema(sc)
-    assert(schema.isDefined)
-    sqlContext.createDataFrame(self.getRDD(sc), self.getSchema(sc).get)
-  }
+class DataFrameDCFunctions(self: DC[Row])(implicit rEncoder: Encoder[Row]) {
 
   @scala.annotation.varargs
-  def select(cols: Column*): DC[Row] = {
+  def select(cols: Column*)(implicit rEncoder: Encoder[Row]): DC[Row] = {
     val f = (df: DataFrame) => {
       df.select(cols:_*)
     }
@@ -25,7 +19,7 @@ class DataFrameDCFunctions(self: DC[Row]) {
   }
 
   @scala.annotation.varargs
-  def select(col: String, cols: String*): DC[Row] = {
+  def select(col: String, cols: String*)(implicit rEncoder: Encoder[Row]): DC[Row] = {
     val f = (df: DataFrame) => {
       df.select(col, cols:_*)
     }
@@ -34,7 +28,7 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new DataFrameTransformDC(self, f, hashTarget)
   }
 
-  def selectExpr(exprs: String*): DC[Row] = {
+  def selectExpr(exprs: String*)(implicit rEncoder: Encoder[Row]): DC[Row] = {
     val f = (df: DataFrame) => {
       df.selectExpr(exprs:_*)
     }
@@ -42,7 +36,7 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new DataFrameTransformDC(self, f, hashTarget)
   }
 
-  def filter(condition: Column): DC[Row] =  {
+  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
     val f = (df: DataFrame) => {
       df.filter(condition)
     }
@@ -51,11 +45,11 @@ class DataFrameDCFunctions(self: DC[Row]) {
     new DataFrameTransformDC(self, f, hashTarget)
   }
 
-  def unionAll(other: DC[Row]): DC[Row] = {
+  def unionAll(other: DC[Row])(implicit rEncoder: Encoder[Row]): DC[Row] = {
     new UnionDC[Row](self, other)
   }
 
-  def drop(colName: String): DC[Row] = {
+  def drop(colName: String)(implicit rEncoder: Encoder[Row]): DC[Row] = {
     val f = (df: DataFrame) => {
       df.drop(colName)
     }

@@ -1,5 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
+import org.apache.spark.sql.{Dataset, Encoder}
 import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
 
@@ -9,7 +10,7 @@ import scala.reflect.ClassTag
   * Created by ngoehausen on 4/19/16.
   */
 class PairDCFunctions[K,V](self: DC[(K,V)])
-    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
+    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null, kvEncoder: Encoder[(K,V)], klEncoder: Encoder[(K,Long)] ){
 
   def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func)
@@ -28,12 +29,14 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
   }
 
   def groupByKey(): DC[(K, Iterable[V])] = {
+    new DatasetTransformDC[]()(self, (ds: Dataset[(K, V)]) => ds.groupByKey(), Seq("groupByKey"))
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(), Seq("groupByKey"))
   }
 
   def groupByKey(numPartitions: Int): DC[(K, Iterable[V])] = {
     new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions), Seq("groupByKey", numPartitions.toString))
   }
+
 
   def join[W](other: DC[(K,W)]): DC[(K, (V, W))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {

@@ -4,6 +4,7 @@ import com.bloomberg.sparkflow.serialization.Hashing
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import Hashing._
+import org.apache.spark.sql.{Encoder, Dataset, SparkSession}
 
 import scala.reflect.ClassTag
 
@@ -13,19 +14,19 @@ import scala.reflect.ClassTag
 private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
 (val prev: DC[T],
  f: RDD[T] => RDD[U],
- hashTarget: Seq[String]) extends DC[U](Seq(prev)) {
+ hashTarget: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  extends DC[U](Seq(prev)) {
 
-  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef) = {
+  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef)(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
     this(prev, f, Seq(hashClass(hashTarget)))
   }
 
-  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef, hashTargets: Seq[String]) = {
+  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef, hashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
     this(prev, f, hashClass(hashTarget) +: hashTargets)
   }
 
-  def computeSparkResults(sc: SparkContext) = {
-    val rdd = f(prev.getRDD(sc))
-    (rdd, prev.getSchema(sc))
+  def computeDataset(spark: SparkSession) = {
+    val rdd = f(prev.getRDD(spark))
+    spark.createDataset(rdd)
   }
 
   override def computeSignature() = {
