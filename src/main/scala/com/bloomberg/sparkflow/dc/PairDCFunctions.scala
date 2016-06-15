@@ -11,6 +11,14 @@ import scala.reflect.ClassTag
 class PairDCFunctions[K,V](self: DC[(K,V)])
     (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
 
+  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
+  }
+
+  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue, numPartitions)(seqOp, combOp), (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString, numPartitions.toString))
+  }
+
   def foldByKey(zeroValue: V)(func: (V,V) => V): DC[(K,V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue)(func), func, Seq("foldByKey", zeroValue.toString))
   }
