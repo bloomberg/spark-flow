@@ -9,6 +9,13 @@ import com.bloomberg.sparkflow._
   */
 class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("map"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.map(_ + 3)
+
+    Seq(4,4,5,6) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
   test("checkpointing"){
     val another = (x: Int) => x < 4
     val filterFunc = (x: Int) => another(x)
