@@ -2,7 +2,7 @@ package com.bloomberg.sparkflow.dc
 
 import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
-
+import scala.collection.Map
 import scala.reflect.ClassTag
 
 /**
@@ -242,6 +242,12 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
 
   def sortByKey(ascending: Boolean, numPartitions: Int): DC[(K,V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.sortByKey(ascending, numPartitions), Seq("sortByKey", ascending.toString, numPartitions.toString))
+  }
+
+//  Actions
+
+  def countByKey: DR[Map[K, Long]] = {
+    self.mapToResult(_.countByKey)
   }
 
 }

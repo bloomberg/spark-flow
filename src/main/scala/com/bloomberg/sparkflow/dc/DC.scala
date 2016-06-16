@@ -225,8 +225,24 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 
 //  Actions
 
+  def collect: DR[Array[T]] = {
+    this.mapToResult(_.collect)
+  }
+
   def reduce(f: (T,T) => T): DR[T] = {
     this.mapToResult(_.reduce(f))
+  }
+
+  def count: DR[Long] = {
+    this.mapToResult(_.count)
+  }
+
+  def first: DR[T] = {
+    this.mapToResult(_.first)
+  }
+
+  def take(num: Int): DR[Array[T]] = {
+    this.mapToResult(_.take(num))
   }
 
 }
