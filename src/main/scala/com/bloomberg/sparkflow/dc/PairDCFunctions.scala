@@ -12,7 +12,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
 
   def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
-    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), Seq(seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
   }
 
   def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
