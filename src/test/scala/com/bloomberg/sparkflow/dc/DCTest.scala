@@ -9,6 +9,13 @@ import com.bloomberg.sparkflow._
   */
 class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("map"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.map(_ + 3)
+
+    Seq(4,4,5,6) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
   test("checkpointing"){
     val another = (x: Int) => x < 4
     val filterFunc = (x: Int) => another(x)
@@ -99,6 +106,21 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     Seq((1,3), (1,4), (2,3), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("groupBy"){
+    val input = parallelize(1 to 5)
+    val result = input.groupBy(x => x % 3)
+
+    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+  }
+
+  test("groupBy(numPartitions)"){
+    val input = parallelize(1 to 5)
+    val result = input.groupBy(x => x % 3, 2)
+
+    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("zip"){
     val left = parallelize(Seq(1,2,3))
     val right = left.map(x => x * 2)
@@ -125,6 +147,43 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     Seq(5, 3, 2, 1) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
     ascending2Part.getRDD(sc).partitions.size shouldEqual 2
 
+  }
+
+//  Actions
+
+  test("collect"){
+    val input = parallelize(1 to 5)
+    val result = input.collect
+
+    result.get(sc) should equal(Array(1,2,3,4,5))
+  }
+
+  test("reduce"){
+    val input = parallelize(1 to 5)
+    val result = input.reduce(_ + _)
+
+    result.get(sc) should equal(15)
+  }
+
+  test("count"){
+    val input = parallelize(1 to 5)
+    val result = input.count
+
+    result.get(sc) should equal(5.0)
+  }
+
+  test("first"){
+    val input = parallelize(Seq("first", "second"))
+    val result = input.first
+
+    result.get(sc) should equal("first")
+  }
+
+  test("take"){
+    val input = parallelize(Seq("first", "second", "third"))
+    val result = input.take(2)
+
+    Seq("first", "second") should contain theSameElementsInOrderAs result.get(sc)
   }
 
 }

@@ -120,6 +120,14 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
+  def groupBy[K](f: T => K)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f), f, Seq("groupBy"))
+  }
+
+  def groupBy[K](f: T => K, numPartitions: Int)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f, numPartitions), f, Seq("groupBy", numPartitions.toString))
+  }
+
   def zip[U: ClassTag](other: DC[U]): DC[(T, U)] = {
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.zip(right)
@@ -154,6 +162,12 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
                                   f: Iterator[T] => Iterator[U],
                                   preservesPartitioning: Boolean = false): DC[U] = {
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.mapPartitions(f, preservesPartitioning), f, Seq(preservesPartitioning.toString))
+  }
+
+  def mapPartitionsWithIndex[U: ClassTag](
+                                          f: (Int, Iterator[T]) => Iterator[U],
+                                          preservesPartitioning: Boolean = false): DC[U] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.mapPartitionsWithIndex(f, preservesPartitioning), f, Seq(preservesPartitioning.toString))
   }
 
   def getRDD(sc: SparkContext): RDD[T] = {
@@ -207,6 +221,28 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 
   private def dataFrameBacked = {
     this.ct.equals(classTag[Row])
+  }
+
+//  Actions
+
+  def collect: DR[Array[T]] = {
+    this.mapToResult(_.collect)
+  }
+
+  def reduce(f: (T,T) => T): DR[T] = {
+    this.mapToResult(_.reduce(f))
+  }
+
+  def count: DR[Long] = {
+    this.mapToResult(_.count)
+  }
+
+  def first: DR[T] = {
+    this.mapToResult(_.first)
+  }
+
+  def take(num: Int): DR[Array[T]] = {
+    this.mapToResult(_.take(num))
   }
 
 }

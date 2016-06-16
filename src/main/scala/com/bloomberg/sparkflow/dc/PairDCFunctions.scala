@@ -2,7 +2,7 @@ package com.bloomberg.sparkflow.dc
 
 import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
-
+import scala.collection.Map
 import scala.reflect.ClassTag
 
 /**
@@ -11,12 +11,28 @@ import scala.reflect.ClassTag
 class PairDCFunctions[K,V](self: DC[(K,V)])
     (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
 
+  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), Seq(seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
+  }
+
+  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue, numPartitions)(seqOp, combOp), (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString, numPartitions.toString))
+  }
+
+  def foldByKey(zeroValue: V)(func: (V,V) => V): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue)(func), func, Seq("foldByKey", zeroValue.toString))
+  }
+
+  def foldByKey(zeroValue: V, numPartitions: Int)(func: (V,V) => V): DC[(K,V)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue, numPartitions)(func), func, Seq("foldByKey", zeroValue.toString, numPartitions.toString))
+  }
+
   def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
-    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func)
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func, Seq("reduceByKey"))
   }
 
   def reduceByKey(func: (V, V) => V, numPartitions: Int): DC[(K, V)] = {
-    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), func, Seq(numPartitions.toString))
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), func, Seq("reduceByKey", numPartitions.toString))
   }
 
   def countApproxDistinctByKey(relativeSD: Double = 0.05): DC[(K, Long)] = {
@@ -226,6 +242,12 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
 
   def sortByKey(ascending: Boolean, numPartitions: Int): DC[(K,V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.sortByKey(ascending, numPartitions), Seq("sortByKey", ascending.toString, numPartitions.toString))
+  }
+
+//  Actions
+
+  def countByKey: DR[Map[K, Long]] = {
+    self.mapToResult(_.countByKey)
   }
 
 }
