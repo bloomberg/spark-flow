@@ -13,7 +13,7 @@ class ClassExplorationTest extends FunSuite with ShouldMatchers {
     val nested = (x: Int) => evenMoreNested(x) + 5
     val g = (x: Int) =>  3 + nested(x) + SomeFunctions.staticMethod(x)
 
-    val classNames = ClassExploration.getClasses(g).map(_.getName)
+    val classNames = ClassExploration.getClassesAndSerializedFields(g)._1.map(_.getName)
 
     val expected = Set(
       "com.bloomberg.sparkflow.serialization.SomeFunctions$",
