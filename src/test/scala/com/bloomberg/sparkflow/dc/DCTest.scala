@@ -149,4 +149,13 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
   }
 
+//  Actions
+
+  test("reduce"){
+    val input = parallelize(1 to 5)
+    val result = input.reduce(_ + _)
+
+    result.get(sc) should equal(15)
+  }
+
 }

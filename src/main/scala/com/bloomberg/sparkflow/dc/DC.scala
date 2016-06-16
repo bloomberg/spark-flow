@@ -223,6 +223,12 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     this.ct.equals(classTag[Row])
   }
 
+//  Actions
+
+  def reduce(f: (T,T) => T): DR[T] = {
+    this.mapToResult(_.reduce(f))
+  }
+
 }
 
 object DC {
