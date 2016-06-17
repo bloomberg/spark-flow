@@ -12,6 +12,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
+import scala.collection.Map
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect._
 import sparkflow.dc.Util._
@@ -251,8 +252,16 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     this.mapToResult(_.reduce(f))
   }
 
+  def fold(zeroValue: T)(op: (T, T) => T): DR[T] = {
+    this.mapToResult(_.fold(zeroValue)(op))
+  }
+
   def count: DR[Long] = {
     this.mapToResult(_.count)
+  }
+
+  def countByValue: DR[Map[T, Long]] = {
+    this.mapToResult(_.countByValue)
   }
 
   def first: DR[T] = {
@@ -261,6 +270,26 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 
   def take(num: Int): DR[Array[T]] = {
     this.mapToResult(_.take(num))
+  }
+
+  def top(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.top(num))
+  }
+
+  def takeOrdered(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.takeOrdered(num))
+  }
+
+  def max()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.max)
+  }
+
+  def min()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.min)
+  }
+
+  def isEmpty: DR[Boolean] = {
+    this.mapToResult(_.isEmpty())
   }
 
 }

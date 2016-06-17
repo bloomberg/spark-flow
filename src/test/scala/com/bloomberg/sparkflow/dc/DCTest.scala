@@ -189,11 +189,25 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     result.get(sc) should equal(15)
   }
 
+  test("fold"){
+    val input = parallelize(1 to 5)
+    val result = input.fold(0)(_ + _)
+
+    result.get(sc) should equal(15)
+  }
+
   test("count"){
     val input = parallelize(1 to 5)
     val result = input.count
 
     result.get(sc) should equal(5.0)
+  }
+
+  test("countByValue"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.countByValue
+
+    Map((1,2.0), (2,1.0), (3,1.0)) should contain theSameElementsAs result.get(sc)
   }
 
   test("first"){
@@ -208,6 +222,46 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     val result = input.take(2)
 
     Seq("first", "second") should contain theSameElementsInOrderAs result.get(sc)
+  }
+
+  test("top"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.top(2)
+
+    result.get(sc) should equal(Array(5,4))
+  }
+
+  test("takeOrdered"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.takeOrdered(2)
+
+    result.get(sc) should equal(Array(1,2))
+  }
+
+  test("max"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.max
+
+    result.get(sc) should equal(5)
+  }
+
+  test("min"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.min
+
+    result.get(sc) should equal(1)
+  }
+
+  test("isEmpty"){
+    val input1 = parallelize(Seq(1,2))
+    val result1 = input1.isEmpty
+
+    result1.get(sc) should equal(false)
+
+    val input2 = parallelize(Seq[Int]())
+    val result2 = input2.isEmpty
+
+    result2.get(sc) should equal(true)
   }
 
 }
