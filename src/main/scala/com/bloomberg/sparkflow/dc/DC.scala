@@ -135,6 +135,24 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
+  def zipWithIndex: DC[(T, Long)] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithIndex, Seq("zipWithIndex"))
+  }
+
+  def subtract(other: DC[T]): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def subtract(other: DC[T], numPartitions: Int): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right, numPartitions)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
   def sortBy[K](
                  f: (T) => K,
                  ascending: Boolean = true)
