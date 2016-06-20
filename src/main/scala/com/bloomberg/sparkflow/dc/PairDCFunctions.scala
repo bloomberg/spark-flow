@@ -123,6 +123,10 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
+  def mapValues[U](f: V => U): DC[(K, U)] = {
+    new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.mapValues(f), f, Seq("mapValues"))
+  }
+
   def cogroup[W](other: DC[(K,W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
@@ -248,6 +252,18 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
 
   def countByKey: DR[Map[K, Long]] = {
     self.mapToResult(_.countByKey)
+  }
+
+  def collectAsMap: DR[Map[K, V]] = {
+    self.mapToResult(_.collectAsMap)
+  }
+
+  def reduceByKeyLocally(func: (V,V) => V): DR[Map[K, V]] = {
+    self.mapToResult(_.reduceByKeyLocally(func))
+  }
+
+  def lookup(key: K): DR[Seq[V]] = {
+    self.mapToResult(_.lookup(key))
   }
 
 }
