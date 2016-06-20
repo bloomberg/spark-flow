@@ -44,4 +44,33 @@ class DoubleDCFunctionsTest extends FunSuite with SharedSparkContext with Should
     result.get(sc) should equal(1.0)
   }
 
+  test("sampleStdev") {
+    val input = parallelize(Seq(1.0,2.0,3.0))
+    val result = input.sampleStdev
+
+    result.get(sc) should equal(1.0)
+  }
+
+  test("sampleVariance") {
+    val input = parallelize(Seq(1.0,2.0,3.0))
+    val result = input.sampleVariance
+
+    result.get(sc) should equal(1.0)
+  }
+
+  test("histogram(bucketCount)") {
+    val input = parallelize(Seq(1.0,1.1,3.0,3.0))
+    val result = input.histogram(2)
+
+    result.get(sc)._1 should equal (Array[Double](1.0,2.0,3.0))
+    result.get(sc)._2 should equal (Array[Long](2,2))
+  }
+
+  test("histogram(buckets,evenBuckets)") {
+    val input = parallelize(Seq(1.0,1.1,3.0,3.0))
+    val result = input.histogram(Array[Double](1.0,2.0,3.0))
+
+    result.get(sc) should equal (Array[Long](2,2))
+  }
+
 }
