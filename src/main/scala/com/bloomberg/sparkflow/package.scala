@@ -21,9 +21,28 @@ import scala.language.implicitConversions
   */
 package object sparkflow extends SQLImplicits {
 
-  private[sparkflow] var sqlContext: SQLContext = null
+  private[sparkflow] def setSession(spark: SparkSession): Unit ={
+    _spark = spark
+    sqlContext = SQLContext.getOrCreate(spark.sparkContext)
+  }
+
+  private[sparkflow] def setSession(sc: SparkContext): Unit ={
+    val spark = SparkSession.builder().config(sc.getConf).getOrCreate()
+    setSession(spark)
+  }
+
+  private[sparkflow] def getSpark(sc: SparkContext): SparkSession ={
+    synchronized {
+      setSession(sc)
+      spark
+    }
+  }
+
+  private var _spark: SparkSession = null
+  private var sqlContext: SQLContext = null
 
   protected override def _sqlContext: SQLContext = sqlContext
+ def spark: SparkSession = _spark
 
 
 

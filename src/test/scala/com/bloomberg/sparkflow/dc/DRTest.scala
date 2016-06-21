@@ -1,8 +1,10 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
+import org.apache.spark.ml.linalg.DenseVector
 import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 import org.scalatest._
 
@@ -37,11 +39,17 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     val ldaModel = new LDA().setK(3).run(corpus)
     println(ldaModel)
      */
+    implicit val denectorEncoder = org.apache.spark.sql.Encoders.kryo[DenseVector]
+    implicit val vectorEncoder = org.apache.spark.sql.Encoders.kryo[Vector]
 
 //    val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
 //    val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
-//    val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
-//    println(ldaModel.get(sc).topicsMatrix)
+//    val ldaModel = new LDA().setK(3).run(corpus)
+
+
+    val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
+    val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
+    val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
 
   }
 

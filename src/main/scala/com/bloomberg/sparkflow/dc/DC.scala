@@ -154,11 +154,11 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
-//  def mapPartitions[U: ClassTag](
-//                                  f: Iterator[T] => Iterator[U],
-//                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
-//    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.mapPartitions(f), f, Seq(preservesPartitioning.toString))
-//  }
+  def mapPartitions[U: ClassTag](
+                                  f: Iterator[T] => Iterator[U],
+                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.mapPartitions(f), f, Seq(preservesPartitioning.toString))
+  }
 
 
   /*
@@ -244,22 +244,22 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
   }
 
   def getRDD(sc: SparkContext): RDD[T] = {
-    getDataset(SparkSession.builder().getOrCreate()).rdd
+    getDataset(getSpark(sc)).rdd
   }
 
   def getDF(sc: SparkContext): DataFrame = {
-    getDataset(SparkSession.builder().getOrCreate()).toDF()
+    getDF(getSpark(sc))
   }
 
   def getDF(spark: SparkSession): DataFrame = {
     getDataset(spark).toDF()
   }
 
+
+
   def getDataset(spark: SparkSession): Dataset[T] = {
     synchronized {
-      if(sparkflow.sqlContext == null){
-        sparkflow.sqlContext = SQLContext.getOrCreate(spark.sparkContext)
-      }
+      sparkflow.setSession(spark)
       if (!assigned) {
         if (checkpointed) {
           loadCheckpoint[T](checkpointPath, spark) match {
