@@ -1,8 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql._
-import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 4/27/16.

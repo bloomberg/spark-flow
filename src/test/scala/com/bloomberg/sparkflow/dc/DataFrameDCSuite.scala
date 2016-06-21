@@ -50,14 +50,14 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     val trashFires = parallelize(1 to 10)
       .map(_ => TrashFire(Random.nextDouble(), Random.nextDouble()))
 
-    val dfdc = trashFires.toDF()
+    val dfdc = trashFires
     dfdc.select("temp").getDF(sc).show()
 
   }
 
   test("union"){
-    val trashFires = parallelize(Seq(TrashFire(1,1))).toDF()
-    val trashFires2 = parallelize(Seq(TrashFire(2,2))).toDF()
+    val trashFires = parallelize(Seq(TrashFire(1,1)))
+    val trashFires2 = parallelize(Seq(TrashFire(2,2)))
 
     val result = trashFires.union(trashFires2)
     val expected = Seq(Row(1,1), Row(2,2))

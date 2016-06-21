@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 6/13/16.
   */
-private[sparkflow] class DatasetTransformDC[U:ClassTag, T:ClassTag]
+private[sparkflow] class DatasetTransformDC[U, T]
 (val prev: DC[T],
  f: Dataset[T] => Dataset[U],
  hashTarget: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) extends DC[U](Seq(prev)) {

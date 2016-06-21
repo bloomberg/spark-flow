@@ -11,11 +11,11 @@ import scala.reflect.ClassTag
 class SecondaryPairDCFunctions[K,K2,V](self: DC[((K,K2),V)])
                                    (implicit kt: ClassTag[K], vt: ClassTag[V], k2t: ClassTag[K2], ord: Ordering[(K,K2)] = null) {
 
-  def repartitionAndSecondarySortWithinPartitions(): DC[((K,K2),V)] = {
-    new RDDTransformDC(self, (rdd: RDD[((K,K2), V)]) => rdd.repartitionAndSortWithinPartitions(new SecondarySortPartioner[K,K2,V](rdd.partitions.length)), Seq("repartAndSort"))
-  }
-
-  def repartitionAndSecondarySortWithinPartitions(numPartitions: Int): DC[((K,K2),V)] = {
-    new RDDTransformDC(self, (rdd: RDD[((K,K2), V)]) => rdd.repartitionAndSortWithinPartitions(new SecondarySortPartioner[K,K2,V](numPartitions)), Seq("repartAndSort", numPartitions.toString))
-  }
+//  def repartitionAndSecondarySortWithinPartitions(): DC[((K,K2),V)] = {
+//    new RDDTransformDC(self, (rdd: RDD[((K,K2), V)]) => rdd.repartitionAndSortWithinPartitions(new SecondarySortPartioner[K,K2,V](rdd.partitions.length)), Seq("repartAndSort"))
+//  }
+//
+//  def repartitionAndSecondarySortWithinPartitions(numPartitions: Int): DC[((K,K2),V)] = {
+//    new RDDTransformDC(self, (rdd: RDD[((K,K2), V)]) => rdd.repartitionAndSortWithinPartitions(new SecondarySortPartioner[K,K2,V](numPartitions)), Seq("repartAndSort", numPartitions.toString))
+//  }
 }

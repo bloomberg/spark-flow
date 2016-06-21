@@ -13,10 +13,10 @@ import com.holdenkarau.spark.testing.SharedSparkContext
 class DataFrameDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMatchers {
 
   test("unionAll") {
-    val trashFires = parallelize(Seq(TrashFire(1,1))).toDF()
-    val trashFires2 = parallelize(Seq(TrashFire(2,2))).toDF()
+    val trashFires = parallelize(Seq(TrashFire(1,1)))
+    val trashFires2 = parallelize(Seq(TrashFire(2,2)))
 
-    val result = trashFires.unionAll(trashFires2)
+    val result = trashFires.union(trashFires2)
     val expected = Seq(Row(1,1), Row(2,2))
 
     expected should contain theSameElementsAs result.getDF(sc).collect()

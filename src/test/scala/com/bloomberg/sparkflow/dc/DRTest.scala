@@ -38,10 +38,10 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     println(ldaModel)
      */
 
-    val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
-    val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
-    val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
-    println(ldaModel.get(sc).topicsMatrix)
+//    val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
+//    val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
+//    val ldaModel = corpus.mapToResult(new LDA().setK(3).run)
+//    println(ldaModel.get(sc).topicsMatrix)
 
   }
 

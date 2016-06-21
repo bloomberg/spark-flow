@@ -50,13 +50,13 @@ package object sparkflow extends SQLImplicits {
 //    sqlContext.createDataFrame(rowRDD, schema)
 //  }
 
-  def read = new DCDataFrameReader
+  def read(implicit rowEncoder: Encoder[Row]) = new DCDataFrameReader
 
-  def parallelize[T:ClassTag](seq: Seq[T]): DC[T] = {
+  def parallelize[T:ClassTag](seq: Seq[T])(implicit tEncoder: Encoder[T]): DC[T] = {
     new ParallelCollectionDC(seq)
   }
 
-  def parallelize[T:ClassTag](seq: Seq[T], numSlices: Int): DC[T] = {
+  def parallelize[T:ClassTag](seq: Seq[T], numSlices: Int)(implicit tEncoder: Encoder[T]): DC[T] = {
     new ParallelCollectionDC(seq, Some(numSlices))
   }
 
@@ -71,13 +71,13 @@ package object sparkflow extends SQLImplicits {
     new SourceDC[String](path, sourceFunc, "textFile")
   }
 
-  def objectFile[T:ClassTag](path: String) = {
+  def objectFile[T:ClassTag](path: String)(implicit tEncoder: Encoder[T]) = {
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path)
     new SourceDC[T](path, sourceFunc, "objectFile")
   }
 
   def objectFile[T:ClassTag](path: String,
-                             minPartitions: Int) = {
+                             minPartitions: Int)(implicit tEncoder: Encoder[T]) = {
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
     new SourceDC[T](path, sourceFunc, "objectFile")
   }
