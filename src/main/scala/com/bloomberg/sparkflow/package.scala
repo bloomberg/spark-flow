@@ -26,6 +26,7 @@ package object sparkflow extends SQLImplicits {
   protected override def _sqlContext: SQLContext = sqlContext
 
 
+
   //  // This must live here to preserve binary compatibility with Spark < 1.5.
 //  implicit class StringToColumn(val sc: StringContext) {
 //    def $(args: Any*): ColumnName = {

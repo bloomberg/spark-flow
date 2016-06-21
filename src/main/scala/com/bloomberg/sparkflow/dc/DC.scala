@@ -20,7 +20,7 @@ import sparkflow._
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T], rowEncoder: Encoder[Row]) extends Dependency[T](deps) {
+abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T]) extends Dependency[T](deps) {
 
   private var dataset: Dataset[T] = _
   private var checkpointed = false
@@ -154,11 +154,11 @@ abstract class DC[T](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T], ro
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
-  def mapPartitions[U: ClassTag](
-                                  f: Iterator[T] => Iterator[U],
-                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
-    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.mapPartitions(f), f, Seq(preservesPartitioning.toString))
-  }
+//  def mapPartitions[U: ClassTag](
+//                                  f: Iterator[T] => Iterator[U],
+//                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
+//    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.mapPartitions(f), f, Seq(preservesPartitioning.toString))
+//  }
 
 
   /*
@@ -166,32 +166,32 @@ abstract class DC[T](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T], ro
    */
 
 
-  @scala.annotation.varargs
-  def select(cols: Column*): DC[Row] = {
-    val f = (ds: Dataset[T]) => {
-      ds.select(cols:_*)
-    }
-    val hashTarget = cols.map(_.toString())
-    new DatasetTransformDC(this, f, hashTarget)
-  }
-
-  @scala.annotation.varargs
-  def select(col: String, cols: String*): DC[Row] = {
-    val f = (ds: Dataset[T]) => {
-      ds.select(col, cols:_*)
-    }
-    val hashTarget = Seq("select", col) ++ cols
-    new DatasetTransformDC(this, f, hashTarget)
-  }
-
-  def selectExpr(exprs: String*): DC[Row] = {
-    val f = (ds: Dataset[T]) => {
-      ds.selectExpr(exprs:_*)
-    }
-    val hashTarget = Seq("selectExpr") ++ exprs
-    new DatasetTransformDC(this, f, hashTarget)
-
-  }
+//  @scala.annotation.varargs
+//  def select(cols: Column*): DC[Row] = {
+//    val f = (ds: Dataset[T]) => {
+//      ds.select(cols:_*)
+//    }
+//    val hashTarget = cols.map(_.toString())
+//    new DatasetTransformDC(this, f, hashTarget)
+//  }
+//
+//  @scala.annotation.varargs
+//  def select(col: String, cols: String*): DC[Row] = {
+//    val f = (ds: Dataset[T]) => {
+//      ds.select(col, cols:_*)
+//    }
+//    val hashTarget = Seq("select", col) ++ cols
+//    new DatasetTransformDC(this, f, hashTarget)
+//  }
+//
+//  def selectExpr(exprs: String*): DC[Row] = {
+//    val f = (ds: Dataset[T]) => {
+//      ds.selectExpr(exprs:_*)
+//    }
+//    val hashTarget = Seq("selectExpr") ++ exprs
+//    new DatasetTransformDC(this, f, hashTarget)
+//
+//  }
 //
 //  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
 //    val f = (df: DataFrame) => {
