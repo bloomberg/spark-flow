@@ -244,16 +244,42 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 
 //  Actions
 
+  def foreach(f: T => Unit): DR[Unit] = {
+    this.mapToResult(_.foreach(f))
+  }
+
+  def foreachPartition(f: Iterator[T] => Unit): DR[Unit] = {
+    this.mapToResult(_.foreachPartition(f))
+  }
+
   def collect: DR[Array[T]] = {
     this.mapToResult(_.collect)
+  }
+
+  def toLocalIterator: DR[Iterator[T]] = {
+    this.mapToResult(_.toLocalIterator)
   }
 
   def reduce(f: (T,T) => T): DR[T] = {
     this.mapToResult(_.reduce(f))
   }
 
+  def treeReduce(f: (T,T) => T, depth: Int = 2): DR[T] = {
+    this.mapToResult(_.treeReduce(f, depth))
+  }
+
   def fold(zeroValue: T)(op: (T, T) => T): DR[T] = {
     this.mapToResult(_.fold(zeroValue)(op))
+  }
+
+  def aggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U, combOp: (U, U) => U): DR[U] = {
+    this.mapToResult(_.aggregate(zeroValue)(seqOp, combOp))
+  }
+
+  def treeAggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U,
+                                               combOp: (U, U) => U,
+                                               depth: Int = 2): DR[U] = {
+    this.mapToResult(_.treeAggregate(zeroValue)(seqOp, combOp, depth))
   }
 
   def count: DR[Long] = {
@@ -264,12 +290,21 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     this.mapToResult(_.countByValue)
   }
 
-  def first: DR[T] = {
-    this.mapToResult(_.first)
+//  Experimental
+  def countApproxDistinct(p: Int, sp: Int): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(p, sp))
+  }
+
+  def countApproxDistinct(relativeSD: Double = 0.05): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(relativeSD))
   }
 
   def take(num: Int): DR[Array[T]] = {
     this.mapToResult(_.take(num))
+  }
+
+  def first: DR[T] = {
+    this.mapToResult(_.first)
   }
 
   def top(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {

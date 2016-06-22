@@ -29,6 +29,14 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     rdd.foreach(println)
   }
 
+  test("sample"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.sample(false, 0.75, 20L)
+
+    result.getRDD(sc).collect() should contain(1)
+    result.getRDD(sc).count should equal(3.0)
+  }
+
   test("union"){
     val first = parallelize(Seq(1,2))
     val second = parallelize(Seq(3,4))
