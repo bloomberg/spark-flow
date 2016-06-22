@@ -4,7 +4,7 @@ organization := "com.bloomberg"
 
 version := "0.0.5-SNAPSHOT"
 
-val SPARK_VERSION = "1.4.1"
+val SPARK_VERSION = "1.6.0"
 val JSON4S_VERSION = "3.3.0"
 
 scalaVersion := "2.10.4"

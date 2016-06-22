@@ -38,19 +38,6 @@ package object sparkflow {
     */
   implicit def symbolToColumn(s: Symbol): ColumnName = new ColumnName(s.name)
 
-  /**
-    * Creates a DataFrame from an RDD of case classes or tuples.
-    *
-    * @since 1.3.0
-    */
-
-  implicit def rddToDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
-    val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
-    val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
-    val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
-    sqlContext.createDataFrame(rowRDD, schema)
-  }
-
   def read = new DCDataFrameReader
 
   def parallelize[T:ClassTag](seq: Seq[T]): DC[T] = {
