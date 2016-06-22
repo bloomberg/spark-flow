@@ -9,6 +9,15 @@ import com.bloomberg.sparkflow._
   */
 class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("combineByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.combineByKey[Array[Int]](Array(_), _ ++ Array(_), _ ++ _, 2)
+
+    Seq(1,2) should contain theSameElementsAs result.getRDD(sc).lookup(1)(0)
+    Seq(3,4) should contain theSameElementsAs result.getRDD(sc).lookup(2)(0)
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("aggregateByKey"){
     val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
     val result = input.aggregateByKey(0)(_ + _, _ + _)
@@ -37,6 +46,20 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
 
     Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
     result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("sampleByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.sampleByKeyExact(withReplacement = false, fractions = Map((1, 0.5), (2, 0.5)), seed = 20L)
+
+    Seq((1,1), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("sampleByKeyExact"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.sampleByKey(withReplacement = false, fractions = Map((1, 0.5), (2, 0.5)), seed = 20L)
+
+    Seq((1,1), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
   test("reduceByKey"){
@@ -158,6 +181,13 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     val expected = Seq((1,(Some(1),Some("a"))), (1,(Some(2),Some("a"))), (2,(Some(3),None)), (3,(None,Some("b"))))
     expected should contain theSameElementsAs result.getRDD(sc).collect()
     result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("mapValues"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3)))
+    val result = input.mapValues(_.toString)
+
+    Seq((1,"1"), (1,"2"), (2,"3")) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
   test("cogroup(other)"){
@@ -321,6 +351,27 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     val result = input.countByKey
 
     Seq((1,2), (2,2)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("collectAsMap"){
+    val input = parallelize(Seq((1,2), (3,4)))
+    val result = input.collectAsMap
+
+    Map((1,2), (3,4)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("reduceByKeyLocally"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.reduceByKeyLocally(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("lookup"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.lookup(2)
+
+    Seq(3, 4) should contain theSameElementsAs result.get(sc)
   }
 
 }

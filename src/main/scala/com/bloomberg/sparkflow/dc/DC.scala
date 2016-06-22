@@ -12,6 +12,7 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
+import scala.collection.Map
 import scala.reflect.runtime.universe.TypeTag
 import scala.reflect._
 import sparkflow.dc.Util._
@@ -135,6 +136,24 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
     new MultiInputDC(this, other, resultFunc)
   }
 
+  def zipWithIndex: DC[(T, Long)] = {
+    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithIndex, Seq("zipWithIndex"))
+  }
+
+  def subtract(other: DC[T]): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
+  def subtract(other: DC[T], numPartitions: Int): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right, numPartitions)
+    }
+    new MultiInputDC(this, other, resultFunc)
+  }
+
   def sortBy[K](
                  f: (T) => K,
                  ascending: Boolean = true)
@@ -225,24 +244,87 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]]) extends Dependency[T](d
 
 //  Actions
 
+  def foreach(f: T => Unit): DR[Unit] = {
+    this.mapToResult(_.foreach(f))
+  }
+
+  def foreachPartition(f: Iterator[T] => Unit): DR[Unit] = {
+    this.mapToResult(_.foreachPartition(f))
+  }
+
   def collect: DR[Array[T]] = {
     this.mapToResult(_.collect)
+  }
+
+  def toLocalIterator: DR[Iterator[T]] = {
+    this.mapToResult(_.toLocalIterator)
   }
 
   def reduce(f: (T,T) => T): DR[T] = {
     this.mapToResult(_.reduce(f))
   }
 
+  def treeReduce(f: (T,T) => T, depth: Int = 2): DR[T] = {
+    this.mapToResult(_.treeReduce(f, depth))
+  }
+
+  def fold(zeroValue: T)(op: (T, T) => T): DR[T] = {
+    this.mapToResult(_.fold(zeroValue)(op))
+  }
+
+  def aggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U, combOp: (U, U) => U): DR[U] = {
+    this.mapToResult(_.aggregate(zeroValue)(seqOp, combOp))
+  }
+
+  def treeAggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U,
+                                               combOp: (U, U) => U,
+                                               depth: Int = 2): DR[U] = {
+    this.mapToResult(_.treeAggregate(zeroValue)(seqOp, combOp, depth))
+  }
+
   def count: DR[Long] = {
     this.mapToResult(_.count)
+  }
+
+  def countByValue: DR[Map[T, Long]] = {
+    this.mapToResult(_.countByValue)
+  }
+
+//  Experimental
+  def countApproxDistinct(p: Int, sp: Int): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(p, sp))
+  }
+
+  def countApproxDistinct(relativeSD: Double = 0.05): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(relativeSD))
+  }
+
+  def take(num: Int): DR[Array[T]] = {
+    this.mapToResult(_.take(num))
   }
 
   def first: DR[T] = {
     this.mapToResult(_.first)
   }
 
-  def take(num: Int): DR[Array[T]] = {
-    this.mapToResult(_.take(num))
+  def top(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.top(num))
+  }
+
+  def takeOrdered(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.takeOrdered(num))
+  }
+
+  def max()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.max)
+  }
+
+  def min()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.min)
+  }
+
+  def isEmpty: DR[Boolean] = {
+    this.mapToResult(_.isEmpty())
   }
 
 }
