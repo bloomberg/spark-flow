@@ -1,6 +1,7 @@
 package com.bloomberg
 
 import org.apache.spark.SparkContext
+import org.apache.spark.ml.linalg.DenseVector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
@@ -43,6 +44,8 @@ package object sparkflow extends SQLImplicits {
 
   protected override def _sqlContext: SQLContext = sqlContext
  def spark: SparkSession = _spark
+
+  implicit val rowEncoder = org.apache.spark.sql.Encoders.kryo[Row]
 
 
 

@@ -17,7 +17,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
      vEncoder: Encoder[V],
      kvEncoder: Encoder[(K,V)],
      klEncoder: Encoder[(K,Long)],
-    kItVEncoder: Encoder[(K, Iterable[V])] ){
+     kArrEncoder: Encoder[(K,Array[V])]) {
 
   def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.reduceByKey(func), func)
@@ -35,12 +35,12 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD, numPartitions), Seq("countApproxDistinctByKey", relativeSD.toString, numPartitions.toString))
   }
 
-  def groupByKey(): DC[(K, Iterable[V])] = {
-    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(), Seq("groupByKey"))
+  def groupByKey(): DC[(K, Array[V])] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey().map{case (k, values) => (k, values.toArray)}, Seq("groupByKey"))
   }
 
-  def groupByKey(numPartitions: Int): DC[(K, Iterable[V])] = {
-    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions), Seq("groupByKey", numPartitions.toString))
+  def groupByKey(numPartitions: Int): DC[(K, Array[V])] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions).map{case (k, values) => (k, values.toArray)}, Seq("groupByKey","groupByKey", numPartitions.toString))
   }
 
 //

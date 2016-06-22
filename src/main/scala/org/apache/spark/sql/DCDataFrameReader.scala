@@ -92,7 +92,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
       }
       withSchema.load()
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -116,7 +116,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     val f = (sparkSession: SparkSession) => {
       sparkSession.read.jdbc(url, table, properties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -150,7 +150,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     val f = (sparkSession: SparkSession) => {
       sparkSession.read.jdbc(url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -178,7 +178,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     val f = (sparkSession: SparkSession) => {
       sparkSession.read.jdbc(url, table, predicates, connectionProperties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
 
@@ -268,7 +268,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     val f = (sparkSession: SparkSession) => {
       sparkSession.read.parquet(paths:_*)
     }
-    new DataframeSourceDC(f, paths.mkString(";"))
+    new DataframeSourceDC(f, paths.mkString(";"), extraOptions.toMap)
   }
 
   /**
@@ -290,7 +290,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
       sparkSession.table(tableName)
     }
     // TODO: this breaks signature lineage
-    new DataframeSourceDC(f, tableName)
+    new DataframeSourceDC(f, tableName, extraOptions.toMap)
   }
 
   /**

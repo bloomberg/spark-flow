@@ -45,7 +45,7 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
 
-  def groupByKey[K](func: T => K)(implicit kEncoder: Encoder[K]): KeyValueGroupedDC[K,T] = {
+  def groupBy[K](func: T => K)(implicit kEncoder: Encoder[K]): KeyValueGroupedDC[K,T] = {
     new KeyValueGroupedDCImpl(kEncoder, this, (ds: Dataset[T]) => ds.groupByKey(func),Seq())
   }
 
@@ -84,7 +84,7 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
   }
 
   def distinct(): DC[T] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.distinct(), Seq("distinct"))
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.distinct(), Seq("distinct"))
   }
 
   def distinct(numPartitions: Int): DC[T] = {
@@ -92,7 +92,7 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
   }
 
   def repartition(numPartitions: Int): DC[T] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.repartition(numPartitions), Seq("repartition", numPartitions.toString))
+    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.repartition(numPartitions), Seq("repartition", numPartitions.toString))
   }
 
   def coalesce(numPartitions: Int, shuffle: Boolean = false): DC[T] = {
@@ -166,40 +166,40 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
    */
 
 
-//  @scala.annotation.varargs
-//  def select(cols: Column*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.select(cols:_*)
-//    }
-//    val hashTarget = cols.map(_.toString())
-//    new DatasetTransformDC(this, f, hashTarget)
-//  }
-//
-//  @scala.annotation.varargs
-//  def select(col: String, cols: String*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.select(col, cols:_*)
-//    }
-//    val hashTarget = Seq("select", col) ++ cols
-//    new DatasetTransformDC(this, f, hashTarget)
-//  }
-//
-//  def selectExpr(exprs: String*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.selectExpr(exprs:_*)
-//    }
-//    val hashTarget = Seq("selectExpr") ++ exprs
-//    new DatasetTransformDC(this, f, hashTarget)
-//
-//  }
-//
+  @scala.annotation.varargs
+  def select(cols: Column*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.select(cols:_*)
+    }
+    val hashTarget = cols.map(_.toString())
+    new DatasetTransformDC(this, f, hashTarget)
+  }
+
+  @scala.annotation.varargs
+  def select(col: String, cols: String*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.select(col, cols:_*)
+    }
+    val hashTarget = Seq("select", col) ++ cols
+    new DatasetTransformDC(this, f, hashTarget)
+  }
+
+  def selectExpr(exprs: String*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.selectExpr(exprs:_*)
+    }
+    val hashTarget = Seq("selectExpr") ++ exprs
+    new DatasetTransformDC(this, f, hashTarget)
+
+  }
+
 //  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
 //    val f = (df: DataFrame) => {
 //      df.filter(condition)
 //    }
 //
 //    val hashTarget = Seq("filter", condition.toString())
-//    new DataFrameTransformDC(self, f, hashTarget)
+//    new DataFrameTransformDC(this, f, hashTarget)
 //  }
 //
 //  def unionAll(other: DC[Row])(implicit rEncoder: Encoder[Row]): DC[Row] = {
@@ -314,7 +314,7 @@ object DC {
      vEncoder: Encoder[V],
      kvEncoder: Encoder[(K,V)],
      klEncoder: Encoder[(K,Long)],
-     kItVEncoder: Encoder[(K, Iterable[V])] ): PairDCFunctions[K, V] = {
+     kArrEncoder: Encoder[(K,Array[V])]): PairDCFunctions[K, V] = {
     new PairDCFunctions(dc)
   }
 
@@ -322,10 +322,10 @@ object DC {
     (implicit kt: ClassTag[K], k2t: ClassTag[K2],vt: ClassTag[V], ord: Ordering[(K,K2)] = null): SecondaryPairDCFunctions[K, K2, V] = {
     new SecondaryPairDCFunctions(dc)
   }
-
-  implicit def dcToDFFunctions(dc: DC[Row])(implicit rowEncoder: Encoder[Row]): DataFrameDCFunctions = {
-    new DataFrameDCFunctions(dc)
-  }
+//
+//  implicit def dcToDFFunctions(dc: DC[Row])(implicit rowEncoder: Encoder[Row]): DataFrameDCFunctions = {
+//    new DataFrameDCFunctions(dc)
+//  }
 
   implicit def dcToDoubleFunctions(dc: DC[Double]): DoubleDCFunctions = {
     new DoubleDCFunctions(dc)

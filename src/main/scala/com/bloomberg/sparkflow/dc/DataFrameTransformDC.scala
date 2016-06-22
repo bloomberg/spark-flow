@@ -1,14 +1,13 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing._
-import org.apache.spark.SparkContext
 import com.bloomberg.sparkflow._
 import org.apache.spark.sql.{SparkSession, Row, DataFrame, Encoder}
 
 /**
   * Created by ngoehausen on 4/28/16.
   */
-class DataFrameTransformDC(prev: DC[Row], f: DataFrame => DataFrame, hashTarget: Seq[String])(implicit rEncoder: Encoder[Row]) extends DC[Row](Seq(prev)){
+class DataFrameTransformDC(prev: DC[Row], f: DataFrame => DataFrame, hashTarget: Seq[String]) extends DC[Row](Seq(prev)){
 
   def computeDataset(spark: SparkSession) = {
     val df = f(prev.getDF(spark))
