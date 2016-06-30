@@ -204,36 +204,36 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     expected should contain theSameElementsAs result.getRDD(sc).collect()
     result.getRDD(sc).partitions.size shouldEqual 2
   }
-//
-//  test("groupWith(other)"){
-//    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val second = parallelize(Seq((1,"a"), (2,"b")))
-//    val result = first.groupWith(second)
-//
-//    val expected = Seq((1, (Seq(1,2), Seq("a"))), (2, (Seq(3,4), Seq("b"))))
-//    expected should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("groupWith(other1,other2)"){
-//    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val second = parallelize(Seq((1,"a"), (2,"b")))
-//    val third = parallelize(Seq((1,'c'), (2,'d')))
-//    val result = first.groupWith(second, third)
-//
-//    val expected = Seq((1, (Seq(1,2), Seq("a"), Seq('c'))), (2, (Seq(3,4), Seq("b"), Seq('d'))))
-//    expected should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("groupWith(other1,other2,other3)"){
-//    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val second = parallelize(Seq((1,"a"), (2,"b")))
-//    val third = parallelize(Seq((1,'c'), (2,'d')))
-//    val fourth = parallelize(Seq((1,true), (2,false)))
-//    val result = first.groupWith(second, third, fourth)
-//
-//    val expected = Seq((1, (Seq(1,2), Seq("a"), Seq('c'), Seq(true))), (2, (Seq(3,4), Seq("b"), Seq('d'), Seq(false))))
-//    expected should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
+
+  test("groupWith(other)"){
+    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val second = parallelize(Seq((1,"a"), (2,"b")))
+    val result = first.groupWith(second)
+
+    val expected = Seq((1, (Seq(1,2), Seq("a"))), (2, (Seq(3,4), Seq("b"))))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("groupWith(other1,other2)"){
+    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val second = parallelize(Seq((1,"a"), (2,"b")))
+    val third = parallelize(Seq((1,"c"), (2,"d")))
+    val result = first.groupWith(second, third)
+
+    val expected = Seq((1, (Seq(1,2), Seq("a"), Seq("c"))), (2, (Seq(3,4), Seq("b"), Seq("d"))))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("groupWith(other1,other2,other3)"){
+    val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val second = parallelize(Seq((1,"a"), (2,"b")))
+    val third = parallelize(Seq((1,"c"), (2,"d")))
+    val fourth = parallelize(Seq((1,true), (2,false)))
+    val result = first.groupWith(second, third, fourth)
+
+    val expected = Seq((1, (Seq(1,2), Seq("a"), Seq("c"), Seq(true))), (2, (Seq(3,4), Seq("b"), Seq("d"), Seq(false))))
+    expected should contain theSameElementsAs result.getRDD(sc).collect()
+  }
 
   test("subtractByKey"){
     val left = parallelize(Seq((1,1), (1,2), (2,3)))

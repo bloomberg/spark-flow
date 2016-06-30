@@ -1,18 +1,15 @@
 package com.bloomberg
 
 import org.apache.spark.SparkContext
-import org.apache.spark.ml.linalg.DenseVector
-import org.apache.spark.rdd.RDD
+import org.apache.spark.mllib.linalg.DenseVector
+import org.apache.spark.mllib.linalg.SparseVector
+import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.sql._
 import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
 
-import org.apache.spark.sql.catalyst.ScalaReflection
-import org.apache.spark.sql.execution.{RDDConversions}
-import org.apache.spark.sql.types.StructType
 import org.apache.spark.storage.StorageLevel
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.TypeTag
 
 
 import scala.language.implicitConversions
@@ -43,35 +40,12 @@ package object sparkflow extends SQLImplicits {
   private var sqlContext: SQLContext = null
 
   protected override def _sqlContext: SQLContext = sqlContext
- def spark: SparkSession = _spark
+  private def spark: SparkSession = _spark
 
   implicit val rowEncoder = org.apache.spark.sql.Encoders.kryo[Row]
-
-
-
-  //  // This must live here to preserve binary compatibility with Spark < 1.5.
-//  implicit class StringToColumn(val sc: StringContext) {
-//    def $(args: Any*): ColumnName = {
-//      new ColumnName(sc.s(args: _*))
-//    }
-//  }
-
-
-
-  /**
-    * Creates a DataFrame from an RDD of case classes or tuples.
-    *
-    * @since 1.3.0
-    */
-
-//  implicit def rddToDataFrame[A <: Product : TypeTag](rdd: RDD[A]): DataFrame = {
-//    val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
-//    val schema = ScalaReflection.schemaFor[A].dataType.asInstanceOf[StructType]
-//    val rowRDD = RDDConversions.productToRowRdd(rdd, schema.map(_.dataType))
-//    import sqlContext.implicits._
-//
-//    sqlContext.createDataFrame(rowRDD, schema)
-//  }
+  implicit val denseVectorEncoder = org.apache.spark.sql.Encoders.kryo[DenseVector]
+  implicit val sparseVectorEncoder = org.apache.spark.sql.Encoders.kryo[SparseVector]
+  implicit val vectorEncoder = org.apache.spark.sql.Encoders.kryo[Vector]
 
   def read(implicit rowEncoder: Encoder[Row]) = new DCDataFrameReader
 

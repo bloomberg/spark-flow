@@ -116,7 +116,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 //
-  def cogroup[W:ClassTag](other: DC[(K,W)])
+  def cogroup[W](other: DC[(K,W)])
                          (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W]))]): DC[(K, (Seq[V], Seq[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
@@ -187,50 +187,19 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
   }
 
 
-//
-//  def cogroup[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W]))] = {
-//    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
-//      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
-//      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
-//      left.cogroup(right, numPartitions)
-//    }
-//    new MultiInputPairDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
-//  }
-//
-//  def cogroup[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)], numPartitions: Int)
-//  : DC[(K, (Iterable[V], Iterable[W1], Iterable[W2]))] = {
-//    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
-//      val first = rdds(0).asInstanceOf[RDD[(K,V)]]
-//      val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
-//      val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
-//      first.cogroup(second, third, numPartitions)
-//    }
-//    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
-//  }
-//
-//  def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
-//    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
-//      val first = rdds(0).asInstanceOf[RDD[(K,V)]]
-//      val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
-//      val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
-//      val fourth = rdds(3).asInstanceOf[RDD[(K,W3)]]
-//      first.cogroup(second, third, fourth, numPartitions)
-//    }
-//    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
-//  }
-//
-//  def groupWith[W](other: DC[(K, W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
-//    this.cogroup(other)
-//  }
-//
-//  def groupWith[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])
-//  : DC[(K, (Iterable[V], Iterable[W1], Iterable[W2]))] = {
-//    this.cogroup(other1, other2)
-//  }
-//
-//  def groupWith[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)]): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
-//    this.cogroup(other1, other2, other3)
-//  }
+  def groupWith[W](other: DC[(K, W)])(implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W]))]): DC[(K, (Seq[V], Seq[W]))] = {
+    this.cogroup(other)
+  }
+
+  def groupWith[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])(implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2]))])
+  : DC[(K, (Seq[V], Seq[W1], Seq[W2]))] = {
+    this.cogroup(other1, other2)
+  }
+
+  def groupWith[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)])
+                           (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))]): DC[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))] = {
+    this.cogroup(other1, other2, other3)
+  }
 
   def subtractByKey[W: ClassTag](other: DC[(K,W)]): DC[(K,V)] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
