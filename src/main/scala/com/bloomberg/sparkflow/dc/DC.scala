@@ -5,14 +5,11 @@ import java.io.File
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.StructType
 import org.apache.spark.mllib.rdd.RDDFunctions._
 import scala.language.implicitConversions
 
 import scala.reflect.ClassTag
 import com.bloomberg.sparkflow
-import com.bloomberg.sparkflow._
-import scala.reflect.runtime.universe.TypeTag
 import scala.reflect._
 import sparkflow.dc.Util._
 import sparkflow._
@@ -45,8 +42,8 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
     new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
 
-  def groupBy[K](func: T => K)(implicit kEncoder: Encoder[K]): KeyValueGroupedDC[K,T] = {
-    new KeyValueGroupedDCImpl(kEncoder, this, (ds: Dataset[T]) => ds.groupByKey(func),Seq())
+  def groupBy[K: Encoder: ClassTag](func: T => K)(implicit kvEncoder: Encoder[(K,T)]): KeyValueGroupedDC[K,T] = {
+    new KeyValueGroupedDCImpl(this, (ds: Dataset[T]) => ds.groupByKey(func),Seq())
   }
 
   def sample(
@@ -193,7 +190,16 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
 
   }
 
-//  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
+  def select[U1: Encoder : ClassTag](c1: TypedColumn[T, U1]): DC[U1] = {
+    val f = (ds: Dataset[T]) => {
+      ds.select(c1)
+    }
+    val hashTarget = Seq("select") :+ c1.toString()
+    new DatasetTransformDC(this, f, hashTarget)
+  }
+
+
+    //  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
 //    val f = (df: DataFrame) => {
 //      df.filter(condition)
 //    }
@@ -314,12 +320,14 @@ object DC {
      vEncoder: Encoder[V],
      kvEncoder: Encoder[(K,V)],
      klEncoder: Encoder[(K,Long)],
+     kSeqEncoder: Encoder[(K,Seq[V])],
      kArrEncoder: Encoder[(K,Array[V])]): PairDCFunctions[K, V] = {
     new PairDCFunctions(dc)
   }
 
   implicit def dcToSecondaryPairDCFunctions[K, K2, V](dc: DC[((K,K2), V)])
-    (implicit kt: ClassTag[K], k2t: ClassTag[K2],vt: ClassTag[V], ord: Ordering[(K,K2)] = null): SecondaryPairDCFunctions[K, K2, V] = {
+    (implicit kt: ClassTag[K], k2t: ClassTag[K2],vt: ClassTag[V], ord: Ordering[(K,K2)] = null,
+     kk2vEncoder: Encoder[((K,K2), V)]): SecondaryPairDCFunctions[K, K2, V] = {
     new SecondaryPairDCFunctions(dc)
   }
 //
