@@ -113,7 +113,7 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
     Seq((1,3), (1,4), (2,3), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
-//
+// //TODO switch to KeyValueGroupedDC
 //  test("groupBy"){
 //    val input = parallelize(1 to 5)
 //    val result = input.groupBy(x => x % 3)
