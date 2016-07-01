@@ -14,11 +14,12 @@ object ClassExploration {
   val mirror = ru.runtimeMirror(getClass.getClassLoader)
   val APPLYMC2 = "apply$mcII$sp"
 
-  def getClasses(func: AnyRef): Set[Class[_]] = {
+  def getClassesAndSerializedFields(func: AnyRef): (List[Class[_]], List[String]) = {
 
     var toExplore = Set(func)
     var exploredClasses = Set[Class[_]]()
     var methodsEncountered = Set[OwnerName]()
+    var encounteredSerializedFields = Set[String]()
 
     while(toExplore.nonEmpty){
       val obj = toExplore.head
@@ -27,6 +28,7 @@ object ClassExploration {
       exploredClasses = exploredClasses + obj.getClass
 
       val fieldObjects = getFieldObjects(obj)
+      encounteredSerializedFields ++= fieldObjects.map(f => s"${obj.getClass.getName}||${f.toString}")
       val (methodObjects, methods) = getObjectsAndMethods(obj)
       methodsEncountered ++= methods
 
@@ -40,7 +42,9 @@ object ClassExploration {
 
     val classesFromMethods = methodsEncountered.map(_.owner).map(Class.forName)
 
-    exploredClasses ++ classesFromMethods
+    val resultClasses = (exploredClasses ++ classesFromMethods).toList.sortBy(_.getName)
+    val resultFields = encounteredSerializedFields.toList.sorted
+    (resultClasses, resultFields)
   }
 
   def getClassReader(cls: Class[_]): ClassReader = {
@@ -54,9 +58,11 @@ object ClassExploration {
 
     val fields = cls.getDeclaredFields
 
-    val nestedObjects = fields.map(f =>{
-      f.setAccessible(true)
-      f.get(func)}).filter(_!= null)
+    val nestedObjects = fields
+      .filter(_.getName != "serialVersionUID")
+      .map(f =>{
+        f.setAccessible(true)
+        f.get(func)}).filter(_!= null)
 
     nestedObjects.toSet
   }

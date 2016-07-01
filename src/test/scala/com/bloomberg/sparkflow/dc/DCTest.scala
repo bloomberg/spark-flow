@@ -9,6 +9,13 @@ import com.bloomberg.sparkflow._
   */
 class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("map"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.map(_ + 3)
+
+    Seq(4,4,5,6) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
   test("checkpointing"){
     val another = (x: Int) => x < 4
     val filterFunc = (x: Int) => another(x)
@@ -20,6 +27,14 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
     val rdd = doubled.getRDD(sc)
     rdd.foreach(println)
+  }
+
+  test("sample"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.sample(false, 0.75, 20L)
+
+    result.getRDD(sc).collect() should contain(1)
+    result.getRDD(sc).count should equal(3.0)
   }
 
   test("union"){
@@ -98,6 +113,21 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
     Seq((1,3), (1,4), (2,3), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
+//
+//  test("groupBy"){
+//    val input = parallelize(1 to 5)
+//    val result = input.groupBy(x => x % 3)
+//
+//    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+//  }
+//
+//  test("groupBy(numPartitions)"){
+//    val input = parallelize(1 to 5)
+//    val result = input.groupBy(x => x % 3, 2)
+//
+//    Seq((0, List(3)), (1, List(1,4)), (2, List(2,5))) should contain theSameElementsAs result.getRDD(sc).map(p => (p._1, p._2.toList)).collect()
+//    result.getRDD(sc).partitions.size shouldEqual 2
+//  }
 
   test("zip"){
     val left = parallelize(Seq(1,2,3))
@@ -105,6 +135,30 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     val result = left.zip(right)
 
     Seq((1,2), (2,4), (3,6)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("zipWithIndex"){
+    val input = parallelize(1 to 5)
+    val result = input.zipWithIndex
+
+    Seq((1, 0.0), (2, 1.0), (3, 2.0), (4, 3.0), (5, 4.0)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("subtract"){
+    val left = parallelize(Seq(1,2,3,3))
+    val right = parallelize(Seq(1,3))
+    val result = left.subtract(right)
+
+    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("subtract(numPartitions)"){
+    val left = parallelize(Seq(1,2,3,3))
+    val right = parallelize(Seq(1,3))
+    val result = left.subtract(right, 2)
+
+    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
   }
 
   test("sliding"){
@@ -125,6 +179,97 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     Seq(5, 3, 2, 1) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
     ascending2Part.getRDD(sc).partitions.size shouldEqual 2
 
+  }
+
+//  Actions
+
+  test("collect"){
+    val input = parallelize(1 to 5)
+    val result = input.collect
+
+    result.get(sc) should equal(Array(1,2,3,4,5))
+  }
+
+  test("reduce"){
+    val input = parallelize(1 to 5)
+    val result = input.reduce(_ + _)
+
+    result.get(sc) should equal(15)
+  }
+
+  test("fold"){
+    val input = parallelize(1 to 5)
+    val result = input.fold(0)(_ + _)
+
+    result.get(sc) should equal(15)
+  }
+
+  test("count"){
+    val input = parallelize(1 to 5)
+    val result = input.count
+
+    result.get(sc) should equal(5.0)
+  }
+
+  test("countByValue"){
+    val input = parallelize(Seq(1,1,2,3))
+    val result = input.countByValue
+
+    Map((1,2.0), (2,1.0), (3,1.0)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("first"){
+    val input = parallelize(Seq("first", "second"))
+    val result = input.first
+
+    result.get(sc) should equal("first")
+  }
+
+  test("take"){
+    val input = parallelize(Seq("first", "second", "third"))
+    val result = input.take(2)
+
+    Seq("first", "second") should contain theSameElementsInOrderAs result.get(sc)
+  }
+
+  test("top"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.top(2)
+
+    result.get(sc) should equal(Array(5,4))
+  }
+
+  test("takeOrdered"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.takeOrdered(2)
+
+    result.get(sc) should equal(Array(1,2))
+  }
+
+  test("max"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.max
+
+    result.get(sc) should equal(5)
+  }
+
+  test("min"){
+    val input = parallelize(Seq(1,5,2,4,3))
+    val result = input.min
+
+    result.get(sc) should equal(1)
+  }
+
+  test("isEmpty"){
+    val input1 = parallelize(Seq(1,2))
+    val result1 = input1.isEmpty
+
+    result1.get(sc) should equal(false)
+
+    val input2 = parallelize(Seq[Int]())
+    val result2 = input2.isEmpty
+
+    result2.get(sc) should equal(true)
   }
 
 }

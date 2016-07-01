@@ -3,7 +3,7 @@ package com.bloomberg.sparkflow.serialization
 import java.security.MessageDigest
 
 import com.google.common.io.BaseEncoding
-import com.bloomberg.sparkflow.serialization.ClassExploration.{getClasses, getClassReader}
+import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassesAndSerializedFields, getClassReader}
 
 
 /**
@@ -30,14 +30,13 @@ private[sparkflow] object Hashing {
 
   def hashClass(obj: AnyRef) = {
 
-    val allDepedendentClasses = getClasses(obj).toList.sortBy(_.getName)
+    val (allDepedendentClasses, serializedFields) = getClassesAndSerializedFields(obj)
     val combinedHashTarget = allDepedendentClasses
       .map(getClassReader)
       .map(_.b)
-      .map(hashBytes)
-      .mkString("")
+      .map(hashBytes) ++ serializedFields
 
-    hashString(combinedHashTarget)
+    hashSeq(combinedHashTarget)
 
   }
 

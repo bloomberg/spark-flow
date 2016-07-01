@@ -29,6 +29,12 @@ private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
     spark.createDataset(rdd)
   }
 
+  def this(prev: DC[T], f: RDD[T] => RDD[U], functionHashTargets: Seq[AnyRef], StringHashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
+    this(prev, f, functionHashTargets.map(hashClass(_)).mkString("") +: StringHashTargets)
+  }
+
+
+
   override def computeSignature() = {
     hashString(prev.getSignature + hashSeq(hashTarget))
   }

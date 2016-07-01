@@ -21,7 +21,7 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
 
     val numbers: DC[Int] = parallelize(1 to 10)
     val doubles: DC[Double] = numbers.map(_.toDouble)
-    val sum: DR[Double] = doubles.sum()
+    val sum: DR[Double] = doubles.sum
     val normalized: DC[Double] = doubles.withResult(sum).map{case (number, s) => number / s}
 
     val normalizedRDD = normalized.getRDD(sc)

@@ -12,18 +12,23 @@ import org.apache.spark.hax.SerializeUtil.clean
 class HashingTest extends FunSuite {
 
   test("functionHashing"){
-    val const = 7
+    var param = 7
+    val input = 5
 
     val another = (x: Int) => x * 2
+    val nested = (x: Int) => x * 4 + param + another(x)
+    val g = (x: Int) => nested(x) + param
 
-    val nested = (x: Int) => x * 4 + const + another(x)
-    val g = (x: Int) => nested(x) + const
+    val initialOutput = g(input)
+    val initialGHash = hashClass(g)
+    assert(initialGHash != hashClass(nested))
+    assert(initialGHash != hashClass(another))
 
-    println(hashClass(nested))
-    println(hashClass(g))
+    assert(initialGHash == hashClass(g))
+    param = 10
+    assert(initialGHash != hashClass(g))
+    assert(initialOutput != g(input))
 
-//    MyClosureCleaner.clean(g)
-//    println(hashClass(clean(f)))
   }
 
   test("dcHashing"){

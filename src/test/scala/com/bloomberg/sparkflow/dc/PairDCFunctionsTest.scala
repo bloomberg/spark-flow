@@ -9,6 +9,59 @@ import com.bloomberg.sparkflow._
   */
 class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
+  test("combineByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.combineByKey[Array[Int]](Array(_), _ ++ Array(_), _ ++ _, 2)
+
+    Seq(1,2) should contain theSameElementsAs result.getRDD(sc).lookup(1)(0)
+    Seq(3,4) should contain theSameElementsAs result.getRDD(sc).lookup(2)(0)
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("aggregateByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.aggregateByKey(0)(_ + _, _ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("aggregateByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.aggregateByKey(0, 2)(_ + _, _ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("foldByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("foldByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0, 2)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  //TODO: fix for spark 1.6.0
+//  test("sampleByKey"){
+//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+//    val result = input.sampleByKeyExact(withReplacement = false, fractions = Map((1, 0.5), (2, 0.5)), seed = 20L)
+//
+//    Seq((1,1), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
+//  }
+//
+//  test("sampleByKeyExact"){
+//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+//    val result = input.sampleByKey(withReplacement = false, fractions = Map((1, 0.5), (2, 0.5)), seed = 20L)
+//
+//    Seq((1,1), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
+//  }
 
   test("reduceByKey"){
     val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
@@ -141,6 +194,13 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     result.getRDD(sc).partitions.size shouldEqual 2
   }
 
+  test("mapValues"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3)))
+    val result = input.mapValues(_.toString)
+
+    Seq((1,"1"), (1,"2"), (2,"3")) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
   test("cogroup(other)"){
     val first = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
     val second = parallelize(Seq((1,"a"), (2,"b")))
@@ -268,6 +328,17 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     Seq(1, 2, 3, 1) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
+  test("sortByKey"){
+    val input = parallelize(Seq((1,4), (3,6), (2,5)))
+    val ascending = input.sortByKey()
+    val descending = input.sortByKey(ascending = false)
+    val ascending2Part = input.sortByKey(ascending = true, 2)
+
+    Seq((1,4), (2,5), (3,6)) should contain theSameElementsInOrderAs ascending.getRDD(sc).collect()
+    Seq((3,6), (2,5), (1,4)) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
+    ascending2Part.getRDD(sc).partitions.size shouldEqual 2
+  }
+
   test("partitionBy"){
     val input = parallelize(Seq((2,3), (1,2), (1,1), (2,1)), 2)
 
@@ -278,22 +349,41 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     Seq(List((1,2), (1,1)), List((2,3), (2,1))) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
-  test("keyBy") {
+  test("keyBy"){
     val input = parallelize(Seq("dog", "fish", "horse"))
     val result = input.keyBy(_.size)
 
     Seq((3, "dog"), (4, "fish"), (5, "horse")) should contain theSameElementsAs result.getRDD(sc).collect()
   }
 
-  test("sortByKey"){
-    val input = parallelize(Seq((1,4), (3,6), (2,5)))
-    val ascending = input.sortByKey()
-    val descending = input.sortByKey(ascending = false)
-    val ascending2Part = input.sortByKey(ascending = true, 2)
+//  Actions
 
-    Seq((1,4), (2,5), (3,6)) should contain theSameElementsInOrderAs ascending.getRDD(sc).collect()
-    Seq((3,6), (2,5), (1,4)) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
-    ascending2Part.getRDD(sc).partitions.size shouldEqual 2
+  test("countByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.countByKey
+
+    Seq((1,2), (2,2)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("collectAsMap"){
+    val input = parallelize(Seq((1,2), (3,4)))
+    val result = input.collectAsMap
+
+    Map((1,2), (3,4)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("reduceByKeyLocally"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.reduceByKeyLocally(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.get(sc)
+  }
+
+  test("lookup"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.lookup(2)
+
+    Seq(3, 4) should contain theSameElementsAs result.get(sc)
   }
 
 }
