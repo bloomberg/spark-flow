@@ -12,11 +12,8 @@ import scala.collection.mutable.{Map, Set}
 
 //import org.apache.xbean.asm5.{ClassReader, ClassVisitor, MethodVisitor, Type}
 //import org.apache.xbean.asm5.Opcodes._
-import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassReader, ClassVisitor, MethodVisitor, Type}
 
 
-import org.apache.spark.{Logging, SparkEnv, SparkException}
 
 /**
   * A cleaner that renders closures serializable if they can be done so safely.

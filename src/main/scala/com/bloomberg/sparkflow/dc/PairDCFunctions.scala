@@ -1,5 +1,6 @@
 package com.bloomberg.sparkflow.dc
 
+import org.apache.spark.sql.{Dataset, Encoder}
 import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
 import scala.collection.Map
@@ -10,23 +11,31 @@ import scala.util.Random
   * Created by ngoehausen on 4/19/16.
   */
 class PairDCFunctions[K,V](self: DC[(K,V)])
-    (implicit kt: ClassTag[K], vt: ClassTag[V], ord: Ordering[K] = null){
+    (implicit kt: ClassTag[K],
+     vt: ClassTag[V],
+     ord: Ordering[K] = null,
+     kEncoder: Encoder[K],
+     vEncoder: Encoder[V],
+     kvEncoder: Encoder[(K,V)],
+     klEncoder: Encoder[(K,Long)],
+     kSeqEncoder: Encoder[(K,Seq[V])],
+     kArrEncoder: Encoder[(K,Array[V])]) {
 
   def combineByKey[C](createCombiner: V => C,
                       mergeValue: (C, V) => C,
                       mergeCombiners: (C, C) => C,
-                      numPartitions: Int): DC[(K, C)] = {
+                      numPartitions: Int)(implicit kcEncoder: Encoder[(K,C)]): DC[(K, C)] = {
     new RDDTransformDC(self,
                        (rdd: RDD[(K,V)]) => rdd.combineByKey(createCombiner, mergeValue, mergeCombiners, numPartitions),
                        Seq(createCombiner, mergeValue, mergeCombiners),
                        Seq("combineByKey", numPartitions.toString))
   }
 
-  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U)(implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), Seq(seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
   }
 
-  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U): DC[(K,U)] = {
+  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U)(implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue, numPartitions)(seqOp, combOp), (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString, numPartitions.toString))
   }
 
@@ -67,15 +76,16 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD, numPartitions), Seq("countApproxDistinctByKey", relativeSD.toString, numPartitions.toString))
   }
 
-  def groupByKey(): DC[(K, Iterable[V])] = {
-    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(), Seq("groupByKey"))
+  def groupByKey(): DC[(K, Seq[V])] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey().map{case (k, values) => (k, values.toSeq)}, Seq("groupByKey"))
   }
 
-  def groupByKey(numPartitions: Int): DC[(K, Iterable[V])] = {
-    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions), Seq("groupByKey", numPartitions.toString))
+  def groupByKey(numPartitions: Int): DC[(K, Seq[V])] = {
+    new RDDTransformDC(self, (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions).map{case (k, values) => (k, values.toSeq)}, Seq("groupByKey","groupByKey", numPartitions.toString))
   }
 
-  def join[W](other: DC[(K,W)]): DC[(K, (V, W))] = {
+
+  def join[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -84,7 +94,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
   }
 
-  def join[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, W))] = {
+  def join[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -93,7 +103,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
   }
 
-  def leftOuterJoin[W](other: DC[(K,W)]): DC[(K, (V, Option[W]))] = {
+  def leftOuterJoin[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(V,Option[W]))]): DC[(K, (V, Option[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -102,7 +112,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
   }
 
-  def leftOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (V, Option[W]))] = {
+  def leftOuterJoin[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(V,Option[W]))]): DC[(K, (V, Option[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -111,7 +121,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (V, Option[W])), K](Seq(self, other), resultFunc)
   }
 
-  def rightOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], W))] = {
+  def rightOuterJoin[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(Option[V],W))]): DC[(K, (Option[V], W))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -120,7 +130,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
   }
 
-  def rightOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], W))] = {
+  def rightOuterJoin[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(Option[V],W))]): DC[(K, (Option[V], W))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -129,7 +139,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], W)), K](Seq(self, other), resultFunc)
   }
 
-  def fullOuterJoin[W](other: DC[(K,W)]): DC[(K, (Option[V], Option[W]))] = {
+  def fullOuterJoin[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(Option[V],Option[W]))]): DC[(K, (Option[V], Option[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -138,7 +148,7 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
-  def fullOuterJoin[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Option[V], Option[W]))] = {
+  def fullOuterJoin[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(Option[V],Option[W]))]): DC[(K, (Option[V], Option[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
@@ -147,86 +157,96 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     new MultiInputPairDC[(K, (Option[V], Option[W])), K](Seq(self, other), resultFunc)
   }
 
-  def mapValues[U](f: V => U): DC[(K, U)] = {
+  def mapValues[U](f: V => U)(implicit kUEncoder: Encoder[(K,U)]): DC[(K, U)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.mapValues(f), f, Seq("mapValues"))
   }
 
-  def flatMapValues[U](f: V => TraversableOnce[U]): DC[(K, U)] = {
+  def flatMapValues[U](f: V => TraversableOnce[U])(implicit kUEncoder: Encoder[(K,U)]): DC[(K, U)] = {
     new RDDTransformDC(self, (rdd: RDD[(K,V)]) => rdd.flatMapValues(f), f, Seq("flatMapValues"))
   }
 
-  def cogroup[W](other: DC[(K,W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
+  def cogroup[W](other: DC[(K,W)])
+                         (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W]))]): DC[(K, (Seq[V], Seq[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
-      left.cogroup(right)
+      left.cogroup(right).map{case (k, (v,w)) => (k, (v.toSeq, w.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W]))), K](Seq(self, other), resultFunc)
   }
-
+//
   def cogroup[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])
-  : DC[(K, (Iterable[V], Iterable[W1], Iterable[W2]))] = {
+                     (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2]))])
+  : DC[(K, (Seq[V], Seq[W1], Seq[W2]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val first = rdds(0).asInstanceOf[RDD[(K,V)]]
       val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
-      first.cogroup(second, third)
+      first.cogroup(second, third).map{case (k, (v,w1,w2)) => (k, (v.toSeq, w1.toSeq, w2.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W1], Seq[W2]))), K](Seq(self, other1, other2), resultFunc)
   }
 
-  def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)]): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
+  def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)])
+                         (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))]):
+  DC[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val first = rdds(0).asInstanceOf[RDD[(K,V)]]
       val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
       val fourth = rdds(3).asInstanceOf[RDD[(K,W3)]]
-      first.cogroup(second, third, fourth)
+      first.cogroup(second, third, fourth).map{case (k, (v,w1,w2,w3)) => (k, (v.toSeq, w1.toSeq, w2.toSeq, w3.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
   }
 
-  def cogroup[W](other: DC[(K,W)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W]))] = {
+  def cogroup[W:ClassTag](other: DC[(K,W)], numPartitions: Int)
+                         (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W]))]): DC[(K, (Seq[V], Seq[W]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val left = rdds(0).asInstanceOf[RDD[(K,V)]]
       val right = rdds(1).asInstanceOf[RDD[(K,W)]]
-      left.cogroup(right, numPartitions)
+      left.cogroup(right, numPartitions).map{case (k, (v,w)) => (k, (v.toSeq, w.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W]))), K](Seq(self, other), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W]))), K](Seq(self, other), resultFunc)
   }
-
+//
   def cogroup[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)], numPartitions: Int)
-  : DC[(K, (Iterable[V], Iterable[W1], Iterable[W2]))] = {
+                     (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2]))])
+  : DC[(K, (Seq[V], Seq[W1], Seq[W2]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val first = rdds(0).asInstanceOf[RDD[(K,V)]]
       val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
-      first.cogroup(second, third, numPartitions)
+      first.cogroup(second, third, numPartitions).map{case (k, (v,w1,w2)) => (k, (v.toSeq, w1.toSeq, w2.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2]))), K](Seq(self, other1, other2), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W1], Seq[W2]))), K](Seq(self, other1, other2), resultFunc)
   }
 
-  def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)], numPartitions: Int): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
+  def cogroup[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)], numPartitions: Int)
+                         (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))]):
+  DC[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))] = {
     val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
       val first = rdds(0).asInstanceOf[RDD[(K,V)]]
       val second = rdds(1).asInstanceOf[RDD[(K,W1)]]
       val third = rdds(2).asInstanceOf[RDD[(K,W2)]]
       val fourth = rdds(3).asInstanceOf[RDD[(K,W3)]]
-      first.cogroup(second, third, fourth, numPartitions)
+      first.cogroup(second, third, fourth, numPartitions).map{case (k, (v,w1,w2,w3)) => (k, (v.toSeq, w1.toSeq, w2.toSeq, w3.toSeq))}
     }
-    new MultiInputPairDC[((K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
+    new MultiInputPairDC[((K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))), K](Seq(self, other1, other2, other3), resultFunc)
   }
 
-  def groupWith[W](other: DC[(K, W)]): DC[(K, (Iterable[V], Iterable[W]))] = {
+
+  def groupWith[W](other: DC[(K, W)])(implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W]))]): DC[(K, (Seq[V], Seq[W]))] = {
     this.cogroup(other)
   }
 
-  def groupWith[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])
-  : DC[(K, (Iterable[V], Iterable[W1], Iterable[W2]))] = {
+  def groupWith[W1, W2](other1: DC[(K,W1)], other2: DC[(K,W2)])(implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2]))])
+  : DC[(K, (Seq[V], Seq[W1], Seq[W2]))] = {
     this.cogroup(other1, other2)
   }
 
-  def groupWith[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)]): DC[(K, (Iterable[V], Iterable[W1], Iterable[W2], Iterable[W3]))] = {
+  def groupWith[W1, W2, W3](other1: DC[(K,W1)], other2: DC[(K,W2)], other3: DC[(K,W3)])
+                           (implicit kvwEncoder: Encoder[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))]): DC[(K, (Seq[V], Seq[W1], Seq[W2], Seq[W3]))] = {
     this.cogroup(other1, other2, other3)
   }
 

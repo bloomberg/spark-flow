@@ -9,7 +9,7 @@ import org.apache.spark.sql.types.StructType
 /**
   * Created by ngoehausen on 4/26/16.
   */
-class DCDataFrameReader {
+class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
   /**
     * Specifies the input data source format.
     *
@@ -80,8 +80,8 @@ class DCDataFrameReader {
     * @since 1.4.0
     */
   def load(): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      val withOptions = sqlContext.read.options(extraOptions)
+    val f = (sparkSession: SparkSession) => {
+      val withOptions = sparkSession.read.options(extraOptions)
       val withSource = sourceOpt match {
         case Some(source) => withOptions.format(source)
         case None => withOptions
@@ -92,7 +92,7 @@ class DCDataFrameReader {
       }
       withSchema.load()
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -113,10 +113,10 @@ class DCDataFrameReader {
     * @since 1.4.0
     */
   def jdbc(url: String, table: String, properties: Properties): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      sqlContext.read.jdbc(url, table, properties)
+    val f = (sparkSession: SparkSession) => {
+      sparkSession.read.jdbc(url, table, properties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -147,10 +147,10 @@ class DCDataFrameReader {
             upperBound: Long,
             numPartitions: Int,
             connectionProperties: Properties): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      sqlContext.read.jdbc(url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties)
+    val f = (sparkSession: SparkSession) => {
+      sparkSession.read.jdbc(url, table, columnName, lowerBound, upperBound, numPartitions, connectionProperties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
   /**
@@ -175,10 +175,10 @@ class DCDataFrameReader {
             table: String,
             predicates: Array[String],
             connectionProperties: Properties): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      sqlContext.read.jdbc(url, table, predicates, connectionProperties)
+    val f = (sparkSession: SparkSession) => {
+      sparkSession.read.jdbc(url, table, predicates, connectionProperties)
     }
-    new DataframeSourceDC(f, extraOptions("path"))
+    new DataframeSourceDC(f, extraOptions("path"), extraOptions.toMap)
   }
 
 
@@ -265,10 +265,10 @@ class DCDataFrameReader {
     */
   @scala.annotation.varargs
   def parquet(paths: String*): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      sqlContext.read.parquet(paths:_*)
+    val f = (sparkSession: SparkSession) => {
+      sparkSession.read.parquet(paths:_*)
     }
-    new DataframeSourceDC(f, paths.mkString(";"))
+    new DataframeSourceDC(f, paths.mkString(";"), extraOptions.toMap)
   }
 
   /**
@@ -286,11 +286,11 @@ class DCDataFrameReader {
     * @since 1.4.0
     */
   def table(tableName: String): DC[Row] = {
-    val f = (sqlContext: SQLContext) => {
-      sqlContext.table(tableName)
+    val f = (sparkSession: SparkSession) => {
+      sparkSession.table(tableName)
     }
     // TODO: this breaks signature lineage
-    new DataframeSourceDC(f, tableName)
+    new DataframeSourceDC(f, tableName, extraOptions.toMap)
   }
 
   /**
