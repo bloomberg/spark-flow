@@ -4,10 +4,10 @@ organization := "com.bloomberg"
 
 version := "0.1.0-SNAPSHOT"
 
-val SPARK_VERSION = "2.0.0-preview"
+val SPARK_VERSION = "2.0.0"
 val JSON4S_VERSION = "3.3.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.8"
 
 resolvers ++= Seq("mvnrepository" at "http://mvnrepository.com/artifact/")
 
@@ -22,10 +22,8 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % SPARK_VERSION % "provided",
   "org.apache.spark" %% "spark-mllib" % SPARK_VERSION % "provided",
   "com.google.guava" % "guava" % "19.0",
-  "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1" % "test" excludeAll(asmExclusion, scalaExc, hadoopExc),
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test" withSources() excludeAll(scalaExc),
-  "com.databricks" %% "spark-csv" % "1.4.0",
-  "org.scala-lang" % "scala-compiler" % "2.10.4"
+//  "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1" % "test" excludeAll(asmExclusion, scalaExc, hadoopExc),
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test" withSources() excludeAll(scalaExc)
 )
 
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
