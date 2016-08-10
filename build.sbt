@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % SPARK_VERSION % "provided",
   "org.apache.spark" %% "spark-mllib" % SPARK_VERSION % "provided",
   "com.google.guava" % "guava" % "19.0",
-//  "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.3.1" % "test" excludeAll(asmExclusion, scalaExc, hadoopExc),
+  "com.holdenkarau" %% "spark-testing-base" % "2.0.0_0.4.4" % "test" excludeAll(asmExclusion, scalaExc, hadoopExc),
   "org.scalatest" %% "scalatest" % "2.2.1" % "test" withSources() excludeAll(scalaExc)
 )
 
