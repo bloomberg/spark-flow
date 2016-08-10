@@ -13,52 +13,25 @@ object Util {
 
   case class Edge(src: String, dest: String)
   case class Node(id: String)
-  case class Graph(nodes: scala.collection.mutable.HashMap[String, Node], edges: List[Edge])
+  case class Graph(nodes: Set[Node], edges: Set[Edge])
 
-  //Find top-level nodes.
-  def getGrandparents(x: Dependency[_]) : List[Dependency[_]] ={
-    var temp = new ListBuffer[Dependency[_]]
+  def buildDAG(start: Dependency[_]) : Graph = {
 
-    def grandFinder(y: Dependency[_]){
-      if(y.parents.nonEmpty){
-        for(a <- y.parents){
-          grandFinder(a)
-        }
-      } else {
-        temp += y
-      }
-    }
-    grandFinder(x)
+    var explored : Set[Dependency[_]] = Set()
+    var toExplore : Set[Dependency[_]] = Set(start)
 
-    temp.toList.distinct
-  }
-
-
-  //Build DAG from given starter node. Depends on getGrandparents.
-  def buildDAG(starter: Dependency[_]) : Graph ={
-    val grands = getGrandparents(starter)
-
-    val nodeMap = scala.collection.mutable.HashMap.empty[String, Node]
-    var edgeList = new ListBuffer[Edge]
-
-    def buildDAG2(x: Dependency[_]){
-      nodeMap.update(x.getSignature , new Node(x.getSignature))
-
-      if(x.children.nonEmpty){
-        for(a <- x.children){
-          edgeList += new Edge(x.getSignature, a.getSignature)
-          buildDAG2(a)
-        }
-      }
-
+    while(toExplore.nonEmpty){
+      val x = toExplore.head
+      val goodneighbors = (x.parents ++ x.children).toSet -- explored
+      toExplore = toExplore ++ goodneighbors
+      explored = explored + x
+      toExplore = toExplore - x
     }
 
-    for (b <- grands){
-      buildDAG2(b)
-    }
+    val nodes = explored.map(x => Node(x.getSignature))
+    val edges = explored.flatMap(x => x.parents.map(y => Edge(y.getSignature, x.getSignature)))
 
-    new Graph(nodeMap, edgeList.toList)
-
+    Graph(nodes, edges)
   }
 
 }
