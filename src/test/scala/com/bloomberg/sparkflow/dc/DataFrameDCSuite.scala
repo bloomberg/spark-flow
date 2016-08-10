@@ -1,11 +1,12 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, Encoder}
 import org.scalatest._
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.CaseClasses._
 
+import scala.reflect.ClassTag
 import scala.util.Random
 
 
@@ -49,6 +50,32 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 
     providerURLS.getDF(sc).show()
     println(dc.getRDD(sc).first())
+  }
+
+
+  test("rowEncode"){
+
+    def what()(implicit rEncoder: Encoder[Row]) = {
+      println(rEncoder.clsTag.isInstanceOf[ClassTag[Row]])
+      println(rEncoder.clsTag)
+    }
+
+    what()
+  }
+
+  test("blah"){
+
+    val path = "test.json"
+
+    val spark = getSpark(sc)
+    val df = spark.read.parquet("/tmp/sparkflow/242AC7B2C4EC584857A7BD5FB80CA82E").as[Stuff]
+
+    df.show()
+    df.collect().foreach(println)
+    df.count()
+    println(df.first())
+
+//    println(dc.getRDD(sc).first())
   }
 
   test("fromRdd"){

@@ -8,18 +8,19 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 6/13/16.
   */
-private[sparkflow] class DatasetTransformDC[U: ClassTag, T: ClassTag]
+private[sparkflow] class DatasetTransformDC[U, T]
 (val prev: DC[T],
+ encoder: Encoder[U],
  f: Dataset[T] => Dataset[U],
- hashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) extends DC[U](Seq(prev)) {
-
-  def this(prev: DC[T], f: Dataset[T] => Dataset[U], hashTarget: AnyRef)(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  = {
-    this(prev, f, Seq(hashClass(hashTarget)))
-  }
-
-  def this(prev: DC[T], f: Dataset[T] => Dataset[U], hashTarget: AnyRef, hashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  = {
-    this(prev, f, hashClass(hashTarget) +: hashTargets)
-  }
+ hashTargets: Seq[String]) extends DC[U](encoder, Seq(prev)) {
+//
+//  def this(prev: DC[T], f: Dataset[T] => Dataset[U], hashTarget: AnyRef)(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  = {
+//    this(prev, uEncoder, f, Seq(hashClass(hashTarget)))
+//  }
+//
+//  def this(prev: DC[T], f: Dataset[T] => Dataset[U], hashTarget: AnyRef, hashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  = {
+//    this(prev,uEncoder,  f, hashClass(hashTarget) +: hashTargets)
+//  }
 
   def computeDataset(spark: SparkSession) = {
     val dataset = f(prev.getDataset(spark))

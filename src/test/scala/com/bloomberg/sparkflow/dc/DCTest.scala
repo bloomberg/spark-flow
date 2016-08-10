@@ -1,6 +1,8 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
+import org.apache.spark.sql.types.{StructField, DataTypes, IntegerType, StructType}
+import org.apache.spark.sql.{Row, SQLContext, DataFrame, Dataset}
 import org.scalatest._
 import com.bloomberg.sparkflow._
 
@@ -25,8 +27,33 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     val doubled = filtered.map(_ * 2)
 
 
-    val rdd = doubled.getRDD(sc)
-    rdd.foreach(println)
+    val ds = filtered.getDataset(sc)//.asInstanceOf[DataFrame]
+    ds.show()
+    ds.collect().foreach(println)
+//    ds.map(_ * 2).collect().foreach(println)
+  }
+  test("wtf"){
+
+    val df = getSpark(sc).read.parquet("/tmp/sparkflow/B615C164A4F27B9B88C3BA9AC599ABA7").as[Int].asInstanceOf[Dataset[Int]]
+
+    val res = df.map(_ * 2)
+    res.show()
+    res.collect().foreach(println)
+  }
+
+  test("stupid"){
+
+    val sqlContext = SQLContext.getOrCreate(sc)
+
+    val spark = getSpark(sc)
+    val rows = sc.parallelize(1 to 5).map(Row(_))
+    val schema = StructType(Seq(StructField("num", IntegerType, false)))
+    val df =  spark.createDataFrame(rows, schema)
+    df.collect.foreach(println)
+    df.as[Row].collect.foreach(println)
+//    val df = sqlContext.createDataFrame((1 to 5).toSeq, schema)
+
+
   }
 
   test("sample"){

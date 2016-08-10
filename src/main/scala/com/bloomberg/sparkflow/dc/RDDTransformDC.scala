@@ -11,18 +11,19 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 3/23/16.
   */
-private[sparkflow] class RDDTransformDC[U:ClassTag, T:ClassTag]
+private[sparkflow] class RDDTransformDC[U:Encoder, T:Encoder]
 (val prev: DC[T],
+ uEncoder: Encoder[U],
  f: RDD[T] => RDD[U],
- hashTarget: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U])  extends DC[U](Seq(prev)) {
+ hashTarget: Seq[String])  extends DC[U](uEncoder, Seq(prev)) {
 
-  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef)(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
-    this(prev, f, Seq(hashClass(hashTarget)))
-  }
-
-  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef, hashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
-    this(prev, f, hashClass(hashTarget) +: hashTargets)
-  }
+//  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef) = {
+//    this(prev, f, Seq(hashClass(hashTarget)))
+//  }
+//
+//  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef, hashTargets: Seq[String]) = {
+//    this(prev, f, hashClass(hashTarget) +: hashTargets)
+//  }
 
   def computeDataset(spark: SparkSession) = {
     val rdd = f(prev.getRDD(spark))

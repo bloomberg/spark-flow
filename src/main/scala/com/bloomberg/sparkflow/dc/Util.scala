@@ -19,15 +19,27 @@ object Util {
   private[dc] def saveCheckpoint[T:ClassTag](checkpointPath: String, dataset: Dataset[T]) = {
     assert(dataset != null)
     dataset.write.mode(SaveMode.Overwrite).parquet(checkpointPath)
+
+    println("saved checkpoint")
   }
 
   private[dc] def loadCheckpoint[T: ClassTag](checkpointPath: String, spark: SparkSession)(implicit tEncoder: Encoder[T]): Option[Dataset[T]] = {
     if (pathExists(checkpointPath, spark.sparkContext)) {
-      Try {
-        val dataset = spark.read.parquet(checkpointPath).as[T]
-        dataset.count()
-        dataset
-      }.toOption
+      val dataFrame = spark.read.parquet(checkpointPath)
+
+      dataFrame.show()
+
+      println(tEncoder.clsTag)
+      val dataset = if(tEncoder.clsTag.isInstanceOf[ClassTag[Row]]){
+        dataFrame.asInstanceOf[Dataset[T]]
+      } else {
+        dataFrame.as[T]
+      }
+      dataset.count()
+      dataset.collect().foreach(println)
+
+      dataset.show()
+      Some(dataset)
     } else {
       None
     }

@@ -14,11 +14,13 @@ import com.bloomberg.sparkflow._
 import scala.collection.Map
 import sparkflow.dc.Util._
 import sparkflow._
+import org.apache.spark.sql.EncoderStuff.encFor
+import com.bloomberg.sparkflow.serialization.Hashing._
 
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Encoder[T]) extends Dependency[T](deps) {
+abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Dependency[T](deps) {
 
   private var dataset: Dataset[T] = _
   private var checkpointed = false
@@ -27,20 +29,23 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
   protected def computeDataset(spark: SparkSession): Dataset[T]
 
 
-  def map[U: ClassTag](f: T => U)(implicit uEncoder: Encoder[U]): DC[U] = {
-    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.map(f), f)
+  def map[U: Encoder](f: T => U): DC[U] = {
+    val uEncoder = encFor[U]
+    new DatasetTransformDC(this, uEncoder, (ds: Dataset[T]) => ds.map(f), Seq(hashClass(f)))
   }
 
   def filter(f: T => Boolean): DC[T] = {
-    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.filter(f), f)
+    new DatasetTransformDC(this, encoder, (ds: Dataset[T]) => ds.filter(f), Seq(hashClass(f)))
   }
 
-  def flatMap[U: ClassTag](f: T => TraversableOnce[U])(implicit uEncoder: Encoder[U]): DC[U] = {
-    new DatasetTransformDC(this, (ds: Dataset[T]) => ds.flatMap(f), f)
+  def flatMap[U: Encoder](f: T => TraversableOnce[U]): DC[U] = {
+    val uEncoder = encFor[U]
+    new DatasetTransformDC(this, uEncoder, (ds: Dataset[T]) => ds.flatMap(f), Seq(hashClass(f)))
   }
 
-  def zipWithUniqueId()(implicit tupEncoder: Encoder[(T,Long)]): DC[(T, Long)] = {
-    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
+  def zipWithUniqueId(): DC[(T, Long)] = {
+    val tupEncoder = encFor[(T, Long)]
+    new RDDTransformDC(this, tupEncoder, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
 
   def groupBy[K: Encoder: ClassTag](func: T => K)(implicit kvEncoder: Encoder[(K,T)]): KeyValueGroupedDC[K,T] = {
@@ -294,7 +299,11 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
     getDataset(spark).toDF()
   }
 
-
+  def getDataset(sc: SparkContext): Dataset[T] = {
+    val ds = getDataset(getSpark(sc))
+    ds.collect().foreach(println)
+    ds
+  }
 
   def getDataset(spark: SparkSession): Dataset[T] = {
     synchronized {
@@ -316,6 +325,7 @@ abstract class DC[T: ClassTag](deps: Seq[Dependency[_]])(implicit tEncoder: Enco
         }
       }
     }
+    dataset.collect().foreach(println)
     dataset
   }
 
