@@ -34,58 +34,44 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 //    make.getDF(sc).collect().foreach(println)
 //  }
 
-  test("json"){
-    val path = "test.json"
-
-    val dc = read.json(testFile(path)).repartition(10)
-
-    val sQLContext = SQLContext.getOrCreate(sc)
-    val df = sQLContext.read.json(testFile(path)).show()
-
-    dc.getDF(sc).show()
-
-    val providerURLS = dc.select("provider_urls").checkpoint()
-
-    providerURLS.getDF(sc).columns.foreach(println)
-
-    providerURLS.getDF(sc).show()
-    println(dc.getRDD(sc).first())
-  }
-
-
-  test("rowEncode"){
-
-    def what()(implicit rEncoder: Encoder[Row]) = {
-      println(rEncoder.clsTag.isInstanceOf[ClassTag[Row]])
-      println(rEncoder.clsTag)
-    }
-
-    what()
-  }
-
-  test("blah"){
-
-    val path = "test.json"
-
-    val spark = getSpark(sc)
-    val df = spark.read.parquet("/tmp/sparkflow/242AC7B2C4EC584857A7BD5FB80CA82E").as[Stuff]
-
-    df.show()
-    df.collect().foreach(println)
-    df.count()
-    println(df.first())
-
+//  test("json"){
+//    val path = "test.json"
+//
+//    val dc = read.json(testFile(path)).repartition(10)
+//
+//    val sQLContext = SQLContext.getOrCreate(sc)
+//    val df = sQLContext.read.json(testFile(path)).show()
+//
+//    dc.getDF(sc).show()
+//
+//    val providerURLS = dc.select("provider_urls").checkpoint()
+//
+//    providerURLS.getDF(sc).columns.foreach(println)
+//
+//    providerURLS.getDF(sc).show()
 //    println(dc.getRDD(sc).first())
-  }
+//  }
 
-  test("fromRdd"){
-    val trashFires = parallelize(1 to 10)
-      .map(_ => TrashFire(Random.nextDouble(), Random.nextDouble()))
+//
+//  test("rowEncode"){
+//
+//    def what()(implicit rEncoder: Encoder[Row]) = {
+//      println(rEncoder.clsTag.isInstanceOf[ClassTag[Row]])
+//      println(rEncoder.clsTag)
+//    }
+//
+//    what()
+//  }
 
-    val dfdc = trashFires
-    dfdc.select("temp").getDF(sc).show()
 
-  }
+//  test("fromRdd"){
+//    val trashFires = parallelize(1 to 10)
+//      .map(_ => TrashFire(Random.nextDouble(), Random.nextDouble()))
+//
+//    val dfdc = trashFires
+//    dfdc.select("temp").getDF(sc).show()
+//
+//  }
 
   test("union"){
     val trashFires = parallelize(Seq(TrashFire(1,1)))

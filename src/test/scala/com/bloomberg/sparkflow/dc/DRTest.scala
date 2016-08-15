@@ -14,19 +14,19 @@ import com.bloomberg.sparkflow._
   * Created by ngoehausen on 3/23/16.
   */
 class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
-
-  test("normalize"){
-
-
-
-    val numbers: DC[Int] = parallelize(1 to 10)
-    val doubles: DC[Double] = numbers.map(_.toDouble)
-    val sum: DR[Double] = doubles.sum
-    val normalized: DC[Double] = doubles.withResult(sum).map{case (number, s) => number / s}
-
-    val normalizedRDD = normalized.getRDD(sc)
-    normalizedRDD.foreach(println)
-  }
+//
+//  test("normalize"){
+//
+//
+//
+//    val numbers: DC[Int] = parallelize(1 to 10)
+//    val doubles: DC[Double] = numbers.map(_.toDouble)
+//    val sum: DR[Double] = doubles.sum
+//    val normalized: DC[Double] = doubles.withResult(sum).map{case (number, s) => number / s}
+//
+//    val normalizedRDD = normalized.getRDD(sc)
+//    normalizedRDD.foreach(println)
+//  }
 
 
   test("machineLearning"){

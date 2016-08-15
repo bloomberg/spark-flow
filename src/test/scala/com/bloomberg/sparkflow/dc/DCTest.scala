@@ -26,35 +26,34 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     val filtered = numbers.filter(_ < 3).checkpoint()
     val doubled = filtered.map(_ * 2)
 
+    println(filtered.getSignature)
 
+    val ds1 = filtered.getDataset(sc)//.asInstanceOf[DataFrame]
     val ds = filtered.getDataset(sc)//.asInstanceOf[DataFrame]
+    ds.columns.foreach(println)
+    ds.dtypes.foreach(println)
+    println(ds.schema)
     ds.show()
-    ds.collect().foreach(println)
+    val stuff = ds.first()
 //    ds.map(_ * 2).collect().foreach(println)
   }
-  test("wtf"){
-
-    val df = getSpark(sc).read.parquet("/tmp/sparkflow/B615C164A4F27B9B88C3BA9AC599ABA7").as[Int].asInstanceOf[Dataset[Int]]
-
-    val res = df.map(_ * 2)
-    res.show()
-    res.collect().foreach(println)
-  }
-
-  test("stupid"){
-
-    val sqlContext = SQLContext.getOrCreate(sc)
-
-    val spark = getSpark(sc)
-    val rows = sc.parallelize(1 to 5).map(Row(_))
-    val schema = StructType(Seq(StructField("num", IntegerType, false)))
-    val df =  spark.createDataFrame(rows, schema)
-    df.collect.foreach(println)
-    df.as[Row].collect.foreach(println)
-//    val df = sqlContext.createDataFrame((1 to 5).toSeq, schema)
-
-
-  }
+//
+//
+//
+//  test("stupid"){
+//
+//    val sqlContext = SQLContext.getOrCreate(sc)
+//
+//    val spark = getSpark(sc)
+//    val rows = sc.parallelize(1 to 5).map(Row(_))
+//    val schema = StructType(Seq(StructField("num", IntegerType, false)))
+//    val df =  spark.createDataFrame(rows, schema)
+//    df.collect.foreach(println)
+//    df.as[Row].collect.foreach(println)
+////    val df = sqlContext.createDataFrame((1 to 5).toSeq, schema)
+//
+//
+//  }
 
   test("sample"){
     val input = parallelize(Seq(1,1,2,3))
@@ -163,140 +162,140 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
     Seq((1,2), (2,4), (3,6)) should contain theSameElementsAs result.getRDD(sc).collect()
   }
-
-  test("zipWithIndex"){
-    val input = parallelize(1 to 5)
-    val result = input.zipWithIndex
-
-    Seq((1, 0.0), (2, 1.0), (3, 2.0), (4, 3.0), (5, 4.0)) should contain theSameElementsAs result.getRDD(sc).collect()
-  }
-
-  test("subtract"){
-    val left = parallelize(Seq(1,2,3,3))
-    val right = parallelize(Seq(1,3))
-    val result = left.subtract(right)
-
-    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
-  }
-
-  test("subtract(numPartitions)"){
-    val left = parallelize(Seq(1,2,3,3))
-    val right = parallelize(Seq(1,3))
-    val result = left.subtract(right, 2)
-
-    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
-    result.getRDD(sc).partitions.size shouldEqual 2
-  }
-
-  test("sliding"){
-    val input = parallelize(1 to 4)
-    val result = input.sliding(2)
-
-    Seq(Array(1,2), Array(2,3), Array(3,4)) should contain theSameElementsInOrderAs result.getRDD(sc).collect()
-
-  }
-
-  test("sortBy"){
-    val input = parallelize(Seq(5, 2, 3, 1))
-    val ascending = input.sortBy(x => x)
-    val descending = input.sortBy(x => x, ascending = false)
-    val ascending2Part = input.sortBy(x => x, ascending = true, 2)
-
-    Seq(1, 2, 3, 5) should contain theSameElementsInOrderAs ascending.getRDD(sc).collect()
-    Seq(5, 3, 2, 1) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
-    ascending2Part.getRDD(sc).partitions.size shouldEqual 2
-
-  }
-
-//  Actions
-
-  test("collect"){
-    val input = parallelize(1 to 5)
-    val result = input.collect
-
-    result.get(sc) should equal(Array(1,2,3,4,5))
-  }
-
-  test("reduce"){
-    val input = parallelize(1 to 5)
-    val result = input.reduce(_ + _)
-
-    result.get(sc) should equal(15)
-  }
-
-  test("fold"){
-    val input = parallelize(1 to 5)
-    val result = input.fold(0)(_ + _)
-
-    result.get(sc) should equal(15)
-  }
-
-  test("count"){
-    val input = parallelize(1 to 5)
-    val result = input.count
-
-    result.get(sc) should equal(5.0)
-  }
-
-  test("countByValue"){
-    val input = parallelize(Seq(1,1,2,3))
-    val result = input.countByValue
-
-    Map((1,2.0), (2,1.0), (3,1.0)) should contain theSameElementsAs result.get(sc)
-  }
-
-  test("first"){
-    val input = parallelize(Seq("first", "second"))
-    val result = input.first
-
-    result.get(sc) should equal("first")
-  }
-
-  test("take"){
-    val input = parallelize(Seq("first", "second", "third"))
-    val result = input.take(2)
-
-    Seq("first", "second") should contain theSameElementsInOrderAs result.get(sc)
-  }
-
-  test("top"){
-    val input = parallelize(Seq(1,5,2,4,3))
-    val result = input.top(2)
-
-    result.get(sc) should equal(Array(5,4))
-  }
-
-  test("takeOrdered"){
-    val input = parallelize(Seq(1,5,2,4,3))
-    val result = input.takeOrdered(2)
-
-    result.get(sc) should equal(Array(1,2))
-  }
-
-  test("max"){
-    val input = parallelize(Seq(1,5,2,4,3))
-    val result = input.max
-
-    result.get(sc) should equal(5)
-  }
-
-  test("min"){
-    val input = parallelize(Seq(1,5,2,4,3))
-    val result = input.min
-
-    result.get(sc) should equal(1)
-  }
-
-  test("isEmpty"){
-    val input1 = parallelize(Seq(1,2))
-    val result1 = input1.isEmpty
-
-    result1.get(sc) should equal(false)
-
-    val input2 = parallelize(Seq[Int]())
-    val result2 = input2.isEmpty
-
-    result2.get(sc) should equal(true)
-  }
+//
+//  test("zipWithIndex"){
+//    val input = parallelize(1 to 5)
+//    val result = input.zipWithIndex
+//
+//    Seq((1, 0.0), (2, 1.0), (3, 2.0), (4, 3.0), (5, 4.0)) should contain theSameElementsAs result.getRDD(sc).collect()
+//  }
+//
+//  test("subtract"){
+//    val left = parallelize(Seq(1,2,3,3))
+//    val right = parallelize(Seq(1,3))
+//    val result = left.subtract(right)
+//
+//    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
+//  }
+//
+//  test("subtract(numPartitions)"){
+//    val left = parallelize(Seq(1,2,3,3))
+//    val right = parallelize(Seq(1,3))
+//    val result = left.subtract(right, 2)
+//
+//    Seq(2) should contain theSameElementsAs result.getRDD(sc).collect()
+//    result.getRDD(sc).partitions.size shouldEqual 2
+//  }
+//
+//  test("sliding"){
+//    val input = parallelize(1 to 4)
+//    val result = input.sliding(2)
+//
+//    Seq(Array(1,2), Array(2,3), Array(3,4)) should contain theSameElementsInOrderAs result.getRDD(sc).collect()
+//
+//  }
+//
+//  test("sortBy"){
+//    val input = parallelize(Seq(5, 2, 3, 1))
+//    val ascending = input.sortBy(x => x)
+//    val descending = input.sortBy(x => x, ascending = false)
+//    val ascending2Part = input.sortBy(x => x, ascending = true, 2)
+//
+//    Seq(1, 2, 3, 5) should contain theSameElementsInOrderAs ascending.getRDD(sc).collect()
+//    Seq(5, 3, 2, 1) should contain theSameElementsInOrderAs descending.getRDD(sc).collect()
+//    ascending2Part.getRDD(sc).partitions.size shouldEqual 2
+//
+//  }
+//
+////  Actions
+//
+//  test("collect"){
+//    val input = parallelize(1 to 5)
+//    val result = input.collect
+//
+//    result.get(sc) should equal(Array(1,2,3,4,5))
+//  }
+//
+//  test("reduce"){
+//    val input = parallelize(1 to 5)
+//    val result = input.reduce(_ + _)
+//
+//    result.get(sc) should equal(15)
+//  }
+//
+//  test("fold"){
+//    val input = parallelize(1 to 5)
+//    val result = input.fold(0)(_ + _)
+//
+//    result.get(sc) should equal(15)
+//  }
+//
+//  test("count"){
+//    val input = parallelize(1 to 5)
+//    val result = input.count
+//
+//    result.get(sc) should equal(5.0)
+//  }
+//
+//  test("countByValue"){
+//    val input = parallelize(Seq(1,1,2,3))
+//    val result = input.countByValue
+//
+//    Map((1,2.0), (2,1.0), (3,1.0)) should contain theSameElementsAs result.get(sc)
+//  }
+//
+//  test("first"){
+//    val input = parallelize(Seq("first", "second"))
+//    val result = input.first
+//
+//    result.get(sc) should equal("first")
+//  }
+//
+//  test("take"){
+//    val input = parallelize(Seq("first", "second", "third"))
+//    val result = input.take(2)
+//
+//    Seq("first", "second") should contain theSameElementsInOrderAs result.get(sc)
+//  }
+//
+//  test("top"){
+//    val input = parallelize(Seq(1,5,2,4,3))
+//    val result = input.top(2)
+//
+//    result.get(sc) should equal(Array(5,4))
+//  }
+//
+//  test("takeOrdered"){
+//    val input = parallelize(Seq(1,5,2,4,3))
+//    val result = input.takeOrdered(2)
+//
+//    result.get(sc) should equal(Array(1,2))
+//  }
+//
+//  test("max"){
+//    val input = parallelize(Seq(1,5,2,4,3))
+//    val result = input.max
+//
+//    result.get(sc) should equal(5)
+//  }
+//
+//  test("min"){
+//    val input = parallelize(Seq(1,5,2,4,3))
+//    val result = input.min
+//
+//    result.get(sc) should equal(1)
+//  }
+//
+//  test("isEmpty"){
+//    val input1 = parallelize(Seq(1,2))
+//    val result1 = input1.isEmpty
+//
+//    result1.get(sc) should equal(false)
+//
+//    val input2 = parallelize(Seq[Int]())
+//    val result2 = input2.isEmpty
+//
+//    result2.get(sc) should equal(true)
+//  }
 
 }

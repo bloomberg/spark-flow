@@ -10,8 +10,8 @@ import scala.reflect.ClassTag
 /**
   * ResultDependentDistributedCollection
   */
-class ResultDepDC[U:ClassTag, T:ClassTag]
-(val prev: DC[T], dr: DR[U])(implicit tuEncoder: Encoder[(T,U)]) extends DC[(T,U)](Seq(prev, dr)) {
+class ResultDepDC[U, T]
+(encoder: Encoder[(T,U)], val prev: DC[T], dr: DR[U]) extends DC[(T,U)](encoder, Seq(prev, dr)) {
 
   override def computeDataset(spark: SparkSession) = {
     val result = dr.get(spark)

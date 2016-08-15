@@ -10,9 +10,9 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 4/19/16.
   */
-class MultiInputPairDC[T: ClassTag, K:ClassTag](inputs: Seq[DC[_ <: Product2[K, _]]],
-                                                f: (Seq[RDD[_ <: Product2[K, _]]]) => RDD[T])(implicit tEncoder: Encoder[T])
-  extends DC[T](inputs){
+class MultiInputPairDC[T: ClassTag, K:ClassTag](tEncoder: Encoder[T], inputs: Seq[DC[_ <: Product2[K, _]]],
+                                                f: (Seq[RDD[_ <: Product2[K, _]]]) => RDD[T])
+  extends DC[T](tEncoder, inputs){
 
   override def computeSignature() = {
     Hashing.hashString(inputs.map(_.getSignature).mkString("") + Hashing.hashClass(f))

@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
 /**
   * Created by rely10 on 5/27/16.
   */
-class UnionDC[T: ClassTag](left: DC[T], right: DC[T])(implicit tEncoder: Encoder[T]) extends DC[T](Seq(left, right)){
+class UnionDC[T](left: DC[T], right: DC[T])(implicit tEncoder: Encoder[T]) extends DC[T](tEncoder, Seq(left, right)){
 
   override def computeSignature() = {
     Hashing.hashSeq(Seq("union", left.getSignature, right.getSignature))

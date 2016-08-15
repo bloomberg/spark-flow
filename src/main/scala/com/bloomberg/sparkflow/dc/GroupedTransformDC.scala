@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
   */
 class GroupedTransformDC[K,V,T: ClassTag]
 (prev: KeyValueGroupedDC[K,V],
- f: KeyValueGroupedDataset[K,V] => Dataset[T])(implicit tEncoder: Encoder[T]) extends DC[T](Seq(prev)){
+ f: KeyValueGroupedDataset[K,V] => Dataset[T])(implicit tEncoder: Encoder[T]) extends DC[T](tEncoder, Seq(prev)){
 
   override def computeDataset(spark: SparkSession) = {
     val dataset = f(prev.get(spark))

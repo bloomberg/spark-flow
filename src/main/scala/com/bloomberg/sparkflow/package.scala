@@ -14,6 +14,7 @@ import org.apache.spark.storage.StorageLevel
 import scala.reflect.ClassTag
 import scala.reflect.classTag
 
+import org.apache.spark.sql.EncoderStuff.encFor
 
 import scala.language.implicitConversions
 
@@ -63,36 +64,40 @@ package object sparkflow extends SQLImplicits {
     def clsTag: ClassTag[Row] = classTag[Row]
   }
 
-  def read(implicit rowEncoder: Encoder[Row]) = new DCDataFrameReader
+  def read = new DCDataFrameReader
 
-  def parallelize[T:ClassTag](seq: Seq[T])(implicit tEncoder: Encoder[T]): DC[T] = {
-    new ParallelCollectionDC(seq)
+  def parallelize[T:Encoder](seq: Seq[T]): DC[T] = {
+    val encoder = encFor[T]
+    new ParallelCollectionDC(encoder, seq, None)
   }
 
-  def parallelize[T:ClassTag](seq: Seq[T], numSlices: Int)(implicit tEncoder: Encoder[T]): DC[T] = {
-    new ParallelCollectionDC(seq, Some(numSlices))
+  def parallelize[T:Encoder](seq: Seq[T], numSlices: Int): DC[T] = {
+    val encoder = encFor[T]
+    new ParallelCollectionDC(encoder, seq, Some(numSlices))
   }
 
   def textFile(path: String) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path)
-    new SourceDC[String](path, sourceFunc, "textFile")
+    new SourceDC[String](encFor[String],path, sourceFunc, "textFile")
   }
 
   def textFile(path: String,
                minPartitions: Int) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path, minPartitions)
-    new SourceDC[String](path, sourceFunc, "textFile")
+    new SourceDC[String](encFor[String], path, sourceFunc, "textFile")
   }
 
-  def objectFile[T:ClassTag](path: String)(implicit tEncoder: Encoder[T]) = {
+  def objectFile[T:Encoder](path: String) = {
+    implicit val tClassTag = encFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path)
-    new SourceDC[T](path, sourceFunc, "objectFile")
+    new SourceDC[T](encFor[T], path, sourceFunc, "objectFile")
   }
 
-  def objectFile[T:ClassTag](path: String,
-                             minPartitions: Int)(implicit tEncoder: Encoder[T]) = {
+  def objectFile[T:Encoder](path: String,
+                             minPartitions: Int) = {
+    implicit val tClassTag = encFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
-    new SourceDC[T](path, sourceFunc, "objectFile")
+    new SourceDC[T](encFor[T], path, sourceFunc, "objectFile")
   }
 
   private[sparkflow] var checkpointDir = "/tmp/sparkflow"

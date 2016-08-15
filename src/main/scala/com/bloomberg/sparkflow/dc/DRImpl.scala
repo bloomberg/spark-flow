@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 4/19/16.
   */
-class DRImpl[T: ClassTag, U: ClassTag](prev: DC[T], f: RDD[T] => U) extends DR[U](prev){
+class DRImpl[T, U](prev: DC[T], f: RDD[T] => U) extends DR[U](prev){
 
   private var result: U = _
 

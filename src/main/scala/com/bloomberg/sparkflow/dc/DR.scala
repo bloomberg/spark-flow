@@ -8,7 +8,7 @@ import com.bloomberg.sparkflow.getSpark
 /**
   * Deferred Result
   */
-abstract class DR[U:ClassTag](dep: DC[_]) extends Dependency[U](Seq(dep)) {
+abstract class DR[U](dep: DC[_]) extends Dependency[U](Seq(dep)) {
 
   def get(spark: SparkSession): U
 

@@ -11,11 +11,8 @@ import scala.reflect.ClassTag
 /**
   * Created by ngoehausen on 3/23/16.
   */
-private[sparkflow] class RDDTransformDC[U:Encoder, T:Encoder]
-(val prev: DC[T],
- uEncoder: Encoder[U],
- f: RDD[T] => RDD[U],
- hashTarget: Seq[String])  extends DC[U](uEncoder, Seq(prev)) {
+private[sparkflow] class RDDTransformDC[U, T]
+(uEncoder: Encoder[U], val prev: DC[T], f: (RDD[T]) => RDD[U], hashTarget: Seq[String]) extends DC[U](uEncoder, Seq(prev)) {
 
 //  def this(prev: DC[T], f: RDD[T] => RDD[U], hashTarget: AnyRef) = {
 //    this(prev, f, Seq(hashClass(hashTarget)))
@@ -30,10 +27,10 @@ private[sparkflow] class RDDTransformDC[U:Encoder, T:Encoder]
     spark.createDataset(rdd)
   }
 
-  def this(prev: DC[T], f: RDD[T] => RDD[U], functionHashTargets: Seq[AnyRef], StringHashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
-    this(prev, f, functionHashTargets.map(hashClass(_)).mkString("") +: StringHashTargets)
-  }
-
+//  def this(prev: DC[T], f: RDD[T] => RDD[U], functionHashTargets: Seq[AnyRef], StringHashTargets: Seq[String])(implicit tEncoder: Encoder[T], uEncoder: Encoder[U]) = {
+//    this(prev, f, functionHashTargets.map(hashClass(_)).mkString("") +: StringHashTargets)
+//  }
+//
 
 
   override def computeSignature() = {

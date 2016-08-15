@@ -9,7 +9,7 @@ import org.apache.spark.sql.types.StructType
 /**
   * Created by ngoehausen on 4/26/16.
   */
-class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
+class DCDataFrameReader {
   /**
     * Specifies the input data source format.
     *

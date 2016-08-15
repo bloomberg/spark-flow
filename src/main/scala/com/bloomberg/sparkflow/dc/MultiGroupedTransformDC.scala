@@ -12,7 +12,7 @@ class MultiGroupedTransformDC[K,V,U,T: ClassTag]
 (left: KeyValueGroupedDC[K,V],
  right: KeyValueGroupedDC[K,U],
  f: (KeyValueGroupedDataset[K,V], KeyValueGroupedDataset[K,U]) => Dataset[T])
-(implicit tEncoder: Encoder[T]) extends DC[T](Seq(left, right)){
+(implicit tEncoder: Encoder[T]) extends DC[T](tEncoder, Seq(left, right)){
 
   override def computeDataset(spark: SparkSession) = {
     val dataset = f(left.get(spark), right.get(spark))

@@ -9,7 +9,7 @@ abstract class Dependency[T](val parents: Seq[Dependency[_]]) extends Serializab
   val children = scala.collection.mutable.Set[Dependency[_]]()
   parents.map(_.children.add(this))
 
-  val ct = classTag[T]
+//  val ct = classTag[T]
   protected def computeSignature(): String
   private var signature: String = _
 
