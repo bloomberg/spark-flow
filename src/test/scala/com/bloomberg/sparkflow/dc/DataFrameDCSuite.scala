@@ -34,23 +34,23 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 //    make.getDF(sc).collect().foreach(println)
 //  }
 
-//  test("json"){
-//    val path = "test.json"
-//
-//    val dc = read.json(testFile(path)).repartition(10)
-//
-//    val sQLContext = SQLContext.getOrCreate(sc)
-//    val df = sQLContext.read.json(testFile(path)).show()
-//
-//    dc.getDF(sc).show()
-//
+  test("json"){
+    val path = "test.json"
+
+    val dc = read.json(testFile(path)).repartition(10)
+
+    val sQLContext = SQLContext.getOrCreate(sc)
+    val df = sQLContext.read.json(testFile(path)).show()
+
+    dc.getDF(sc).show()
+
 //    val providerURLS = dc.select("provider_urls").checkpoint()
 //
 //    providerURLS.getDF(sc).columns.foreach(println)
 //
 //    providerURLS.getDF(sc).show()
 //    println(dc.getRDD(sc).first())
-//  }
+  }
 
 //
 //  test("rowEncode"){

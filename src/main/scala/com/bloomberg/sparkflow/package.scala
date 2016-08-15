@@ -46,23 +46,11 @@ package object sparkflow extends SQLImplicits {
   protected override def _sqlContext: SQLContext = sqlContext
   private def spark: SparkSession = _spark
 
-//  implicit def rowEncoder = org.apache.spark.sql.Encoders.kryo[Row]
-//  implicit def rowEncoder: Encoder[Row] = ExpressionEncoder()
-//  org.apache.spark.sql.Encoders
   implicit def denseVectorEncoder = org.apache.spark.sql.Encoders.kryo[DenseVector]
   implicit def sparseVectorEncoder = org.apache.spark.sql.Encoders.kryo[SparseVector]
   implicit def vectorEncoder = org.apache.spark.sql.Encoders.kryo[Vector]
 
-  implicit def rowEnc(row: Row): Encoder[Row] = new IntRow(row)
-
-
-  class IntRow(row: Row) extends Encoder[Row]{
-    /** Returns the schema of encoding this type of object as a Row. */
-    def schema: StructType = row.schema
-
-    /** A ClassTag that can be used to construct and Array to contain a collection of `T`. */
-    def clsTag: ClassTag[Row] = classTag[Row]
-  }
+  private[sparkflow] val emptyRowEncoder = RowEncoder(new StructType())
 
   def read = new DCDataFrameReader
 

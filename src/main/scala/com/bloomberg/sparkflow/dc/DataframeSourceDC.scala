@@ -1,15 +1,13 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
-import org.apache.spark.SparkContext
 import org.apache.spark.sql._
-import org.apache.spark.sql.EncoderStuff.encFor
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import com.bloomberg.sparkflow._
 
 /**
   * Created by ngoehausen on 4/26/16.
   */
-class DataframeSourceDC(f: SparkSession => DataFrame, path: String, options: Map[String,String]) extends DC[Row](RowEncoder(Row().schema), Nil) {
+class DataframeSourceDC(f: SparkSession => DataFrame, path: String, options: Map[String,String]) extends DC[Row](emptyRowEncoder, Nil) {
 
   override def computeDataset(spark: SparkSession) = {
     val dataFrame = f(spark)
