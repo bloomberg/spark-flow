@@ -134,8 +134,10 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new MultiInputDC(enc, this, other, resultFunc)
   }
 
-//  def groupBy[K](f: T => K)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
-//    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f), f, Seq("groupBy"))
+//  def groupBy[K:Encoder](f: T => K): DC[(K, Array[T])] = {
+//    val arrayEnc = encFor[Array[T]]
+//    val enc = ExpressionEncoder.tuple(encFor[K], arrayEnc)
+//    new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.groupBy(f).map{case (k, values) => (k, values.toArray)}, Seq("groupBy", hashClass(f)))
 //  }
 //
 //  def groupBy[K](f: T => K, numPartitions: Int)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
@@ -151,49 +153,49 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new MultiInputDC(enc, this, other, resultFunc)
   }
 
-//  def zipWithIndex(implicit tlEncoder: Encoder[(T,Long)]): DC[(T, Long)] = {
-//    val enc = ExpressionEncoder.tuple(unresolvedTEncoder, encFor[Long])
-//    new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.zipWithIndex, Seq("zipWithIndex"))
-//  }
+  def zipWithIndex: DC[(T, Long)] = {
+    val enc = ExpressionEncoder.tuple(exprEnc, encFor[Long])
+    new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.zipWithIndex, Seq("zipWithIndex"))
+  }
 
-//  def subtract(other: DC[T]): DC[T] = {
-//    val resultFunc = (left: RDD[T], right: RDD[T]) => {
-//      left.subtract(right)
-//    }
-//    new MultiInputDC(encoder, this, other, resultFunc)
-//  }
+  def subtract(other: DC[T]): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right)
+    }
+    new MultiInputDC(encoder, this, other, resultFunc)
+  }
 
-//  def subtract(other: DC[T], numPartitions: Int): DC[T] = {
-//    val resultFunc = (left: RDD[T], right: RDD[T]) => {
-//      left.subtract(right, numPartitions)
-//    }
-//    new MultiInputDC(encoder, this, other, resultFunc)
-//  }
+  def subtract(other: DC[T], numPartitions: Int): DC[T] = {
+    val resultFunc = (left: RDD[T], right: RDD[T]) => {
+      left.subtract(right, numPartitions)
+    }
+    new MultiInputDC(encoder, this, other, resultFunc)
+  }
 
-//  def sortBy[K](
-//                 f: (T) => K,
-//                 ascending: Boolean = true)
-//               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
-//    new RDDTransformDC(encoder, this, (rdd: RDD[T]) => rdd.sortBy(f, ascending), Seq(hashClass(f), "sortBy", ascending.toString))
-//  }
+  def sortBy[K](
+                 f: (T) => K,
+                 ascending: Boolean = true)
+               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
+    new RDDTransformDC(encoder, this, (rdd: RDD[T]) => rdd.sortBy(f, ascending), Seq(hashClass(f), "sortBy", ascending.toString))
+  }
 
-//  def sortBy[K](
-//                 f: (T) => K,
-//                 ascending: Boolean,
-//                 numPartitions: Int)
-//               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
-//    new RDDTransformDC(encoder, this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq(hashClass(f), "sortBy", ascending.toString, numPartitions.toString))
-//  }
+  def sortBy[K](
+                 f: (T) => K,
+                 ascending: Boolean,
+                 numPartitions: Int)
+               (implicit ord: Ordering[K], ctag: ClassTag[K]): DC[T] = {
+    new RDDTransformDC(encoder, this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq(hashClass(f), "sortBy", ascending.toString, numPartitions.toString))
+  }
 
   def keyBy[K: Encoder](f: T => K): DC[(K,T)] ={
     val enc = ExpressionEncoder.tuple(encFor[K], exprEnc)
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.keyBy(f), Seq(hashClass(f), "keyBy"))
   }
 
-//  def sliding(windowSize: Int): DC[Array[T]] = {
-//    val arrEncoder = encFor[Array[T]]
-//    new RDDTransformDC(arrEncoder, this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
-//  }
+  def sliding(windowSize: Int)(implicit aEncoder: Encoder[Array[T]]): DC[Array[T]] = {
+    val arrEncoder = encFor[Array[T]]
+    new RDDTransformDC(arrEncoder, this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
+  }
 
   def mapPartitions[U: Encoder](
                                   f: Iterator[T] => Iterator[U],
@@ -208,62 +210,63 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
    */
 
 
-//  @scala.annotation.varargs
-//  def select(cols: Column*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.select(cols:_*)
-//    }
-//    val hashTarget = cols.map(_.toString())
-//    new DatasetTransformDC(, this, f, hashTarget)
-//  }
+  @scala.annotation.varargs
+  def select(cols: Column*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.select(cols:_*)
+    }
+    val hashTarget = cols.map(_.toString())
+    new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
+  }
 
-//  @scala.annotation.varargs
-//  def select(col: String, cols: String*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.select(col, cols:_*)
-//    }
-//    val hashTarget = Seq("select", col) ++ cols
-//    new DatasetTransformDC(f, this, hashTarget)
-//  }
-//
-//  def selectExpr(exprs: String*): DC[Row] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.selectExpr(exprs:_*)
-//    }
-//    val hashTarget = Seq("selectExpr") ++ exprs
-//    new DatasetTransformDC(f, this, hashTarget)
-//
-//  }
-//
-//  def select[U1: Encoder : ClassTag](c1: TypedColumn[T, U1]): DC[U1] = {
-//    val f = (ds: Dataset[T]) => {
-//      ds.select(c1)
-//    }
-//    val hashTarget = Seq("select") :+ c1.toString()
-//    new DatasetTransformDC(f, this, hashTarget)
-//  }
+  @scala.annotation.varargs
+  def select(col: String, cols: String*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.select(col, cols:_*)
+    }
+    val hashTarget = Seq("select", col) ++ cols
+    new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
+  }
+
+  def selectExpr(exprs: String*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.selectExpr(exprs:_*)
+    }
+    val hashTarget = Seq("selectExpr") ++ exprs
+    new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
+
+  }
+
+  def select[U1: Encoder ](c1: TypedColumn[T, U1]): DC[U1] = {
+    val u1Encoder = encFor[U1]
+    val f = (ds: Dataset[T]) => {
+      ds.select(c1)
+    }
+    val hashTarget = Seq("select") :+ c1.toString()
+    new DatasetTransformDC(u1Encoder, this, f, hashTarget)
+  }
 
 
-    //  def filter(condition: Column)(implicit rEncoder: Encoder[Row]): DC[Row] =  {
-//    val f = (df: DataFrame) => {
-//      df.filter(condition)
-//    }
-//
-//    val hashTarget = Seq("filter", condition.toString())
-//    new DataFrameTransformDC(this, f, hashTarget)
-//  }
-//
+  def filter(condition: Column): DC[T] =  {
+    val f = (ds: Dataset[T]) => {
+      ds.filter(condition)
+    }
+
+    val hashTarget = Seq("filter", condition.toString())
+    new DatasetTransformDC(encoder, this, f, hashTarget)
+  }
+
 //  def unionAll(other: DC[Row])(implicit rEncoder: Encoder[Row]): DC[Row] = {
 //    new UnionDC[Row](self, other)
 //  }
 //
-//  def drop(colName: String)(implicit rEncoder: Encoder[Row]): DC[Row] = {
-//    val f = (df: DataFrame) => {
-//      df.drop(colName)
-//    }
-//    val hashTarget = Seq("drop", colName)
-//    new DataFrameTransformDC(self, f, hashTarget)
-//  }
+  def drop(colName: String): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.drop(colName)
+    }
+    val hashTarget = Seq("drop", colName)
+    new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
+  }
 //
 //  def apply(colName: String) = {
 //    new Column(colName)
@@ -315,11 +318,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def getDataset(sc: SparkContext): Dataset[T] = {
-    val ds = getDataset(getSpark(sc))
-//    dataset
-//    println("bullshit")
-//    ds.collect().foreach(println)
-    dataset
+    getDataset(getSpark(sc))
   }
 
   def getDataset(spark: SparkSession): Dataset[T] = {
@@ -366,88 +365,88 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
 
 //  Actions
 
-//  def foreach(f: T => Unit): DR[Unit] = {
-//    this.mapToResult(_.foreach(f))
-//  }
-//
-//  def foreachPartition(f: Iterator[T] => Unit): DR[Unit] = {
-//    this.mapToResult(_.foreachPartition(f))
-//  }
-//
-//  def collect: DR[Array[T]] = {
-//    this.mapToResult(_.collect)
-//  }
-//
-//  def toLocalIterator: DR[Iterator[T]] = {
-//    this.mapToResult(_.toLocalIterator)
-//  }
-//
-//  def reduce(f: (T,T) => T): DR[T] = {
-//    this.mapToResult(_.reduce(f))
-//  }
-//
-//  def treeReduce(f: (T,T) => T, depth: Int = 2): DR[T] = {
-//    this.mapToResult(_.treeReduce(f, depth))
-//  }
-//
-//  def fold(zeroValue: T)(op: (T, T) => T): DR[T] = {
-//    this.mapToResult(_.fold(zeroValue)(op))
-//  }
-//
-//  def aggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U, combOp: (U, U) => U): DR[U] = {
-//    this.mapToResult(_.aggregate(zeroValue)(seqOp, combOp))
-//  }
-//
-//  def treeAggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U,
-//                                               combOp: (U, U) => U,
-//                                               depth: Int = 2): DR[U] = {
-//    this.mapToResult(_.treeAggregate(zeroValue)(seqOp, combOp, depth))
-//  }
-//
-//  def count: DR[Long] = {
-//    this.mapToResult(_.count)
-//  }
-//
-//  def countByValue: DR[Map[T, Long]] = {
-//    this.mapToResult(_.countByValue)
-//  }
-//
-////  Experimental
-//  def countApproxDistinct(p: Int, sp: Int): DR[Long] = {
-//    this.mapToResult(_.countApproxDistinct(p, sp))
-//  }
-//
-//  def countApproxDistinct(relativeSD: Double = 0.05): DR[Long] = {
-//    this.mapToResult(_.countApproxDistinct(relativeSD))
-//  }
-//
-//  def take(num: Int): DR[Array[T]] = {
-//    this.mapToResult(_.take(num))
-//  }
-//
-//  def first: DR[T] = {
-//    this.mapToResult(_.first)
-//  }
-//
-//  def top(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
-//    this.mapToResult(_.top(num))
-//  }
-//
-//  def takeOrdered(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
-//    this.mapToResult(_.takeOrdered(num))
-//  }
-//
-//  def max()(implicit ord: Ordering[T]): DR[T] = {
-//    this.mapToResult(_.max)
-//  }
-//
-//  def min()(implicit ord: Ordering[T]): DR[T] = {
-//    this.mapToResult(_.min)
-//  }
-//
-//  def isEmpty: DR[Boolean] = {
-//    this.mapToResult(_.isEmpty())
-//  }
+  def foreach(f: T => Unit): DR[Unit] = {
+    this.mapToResult(_.foreach(f))
+  }
+
+  def foreachPartition(f: Iterator[T] => Unit): DR[Unit] = {
+    this.mapToResult(_.foreachPartition(f))
+  }
+
+  def collect: DR[Array[T]] = {
+    this.mapToResult(_.collect)
+  }
+
+  def toLocalIterator: DR[Iterator[T]] = {
+    this.mapToResult(_.toLocalIterator)
+  }
+
+  def reduce(f: (T,T) => T): DR[T] = {
+    this.mapToResult(_.reduce(f))
+  }
+
+  def treeReduce(f: (T,T) => T, depth: Int = 2): DR[T] = {
+    this.mapToResult(_.treeReduce(f, depth))
+  }
+
+  def fold(zeroValue: T)(op: (T, T) => T): DR[T] = {
+    this.mapToResult(_.fold(zeroValue)(op))
+  }
+
+  def aggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U, combOp: (U, U) => U): DR[U] = {
+    this.mapToResult(_.aggregate(zeroValue)(seqOp, combOp))
+  }
+
+  def treeAggregate[U: ClassTag](zeroValue: U)(seqOp: (U, T) => U,
+                                               combOp: (U, U) => U,
+                                               depth: Int = 2): DR[U] = {
+    this.mapToResult(_.treeAggregate(zeroValue)(seqOp, combOp, depth))
+  }
+
+  def count: DR[Long] = {
+    this.mapToResult(_.count)
+  }
+
+  def countByValue: DR[Map[T, Long]] = {
+    this.mapToResult(_.countByValue)
+  }
+
+//  Experimental
+  def countApproxDistinct(p: Int, sp: Int): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(p, sp))
+  }
+
+  def countApproxDistinct(relativeSD: Double = 0.05): DR[Long] = {
+    this.mapToResult(_.countApproxDistinct(relativeSD))
+  }
+
+  def take(num: Int): DR[Array[T]] = {
+    this.mapToResult(_.take(num))
+  }
+
+  def first: DR[T] = {
+    this.mapToResult(_.first)
+  }
+
+  def top(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.top(num))
+  }
+
+  def takeOrdered(num: Int)(implicit ord: Ordering[T]): DR[Array[T]] = {
+    this.mapToResult(_.takeOrdered(num))
+  }
+
+  def max()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.max)
+  }
+
+  def min()(implicit ord: Ordering[T]): DR[T] = {
+    this.mapToResult(_.min)
+  }
+
+  def isEmpty: DR[Boolean] = {
+    this.mapToResult(_.isEmpty())
+  }
 
 }
 

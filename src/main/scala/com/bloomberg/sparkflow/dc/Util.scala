@@ -3,9 +3,7 @@ package com.bloomberg.sparkflow.dc
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.StructType
 
 import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
@@ -19,26 +17,17 @@ object Util {
   private[dc] def saveCheckpoint[T:ClassTag](checkpointPath: String, dataset: Dataset[T]) = {
     assert(dataset != null)
     dataset.write.mode(SaveMode.Overwrite).parquet(checkpointPath)
-
-    println("saved checkpoint")
   }
 
   private[dc] def loadCheckpoint[T: ClassTag](checkpointPath: String, spark: SparkSession)(implicit tEncoder: Encoder[T]): Option[Dataset[T]] = {
     if (pathExists(checkpointPath, spark.sparkContext)) {
       val dataFrame = spark.read.parquet(checkpointPath)
-//      val dataset = dataFrame.as[T]
-
       val dataset = if(tEncoder.clsTag.equals(classTag[Row])){
-        println("ROW LOAD")
         dataFrame.asInstanceOf[Dataset[T]]
       } else {
-        println("DS LOAD")
         dataFrame.as[T]
       }
       dataset.count()
-      dataset.collect().foreach(println)
-
-      dataset.show()
       Some(dataset)
     } else {
       None

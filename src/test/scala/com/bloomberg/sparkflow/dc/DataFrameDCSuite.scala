@@ -20,19 +20,19 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
   }
 
   // TODO: upgrade to latest spark for builtin csv reader
-//  test("csv"){
-//    val cars = read
-//      .format("org.apache.spark.sql.execution.datasources.csv")
-//      .option("header", "true")
-//      .load(testFile("cars.csv"))
-//
-//    val makeModel = cars.select("make", "model")
-//    val make = cars.select("make").checkpoint()
-//
-//    assert(make.getSignature != makeModel.getSignature)
-//
-//    make.getDF(sc).collect().foreach(println)
-//  }
+  test("csv"){
+    val cars = read
+      .format("csv")
+      .option("header", "true")
+      .load(testFile("cars.csv"))
+
+    val makeModel = cars.select("make", "model")
+    val make = cars.select("make").checkpoint()
+
+    assert(make.getSignature != makeModel.getSignature)
+
+    make.getDF(sc).collect().foreach(println)
+  }
 
   test("json"){
     val path = "test.json"
@@ -44,24 +44,15 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 
     dc.getDF(sc).show()
 
-//    val providerURLS = dc.select("provider_urls").checkpoint()
-//
-//    providerURLS.getDF(sc).columns.foreach(println)
-//
-//    providerURLS.getDF(sc).show()
-//    println(dc.getRDD(sc).first())
+    val providerURLS = dc.select("provider_urls").checkpoint()
+
+    providerURLS.getDF(sc).columns.foreach(println)
+
+    providerURLS.getDF(sc).show()
+    println(dc.getRDD(sc).first())
   }
 
-//
-//  test("rowEncode"){
-//
-//    def what()(implicit rEncoder: Encoder[Row]) = {
-//      println(rEncoder.clsTag.isInstanceOf[ClassTag[Row]])
-//      println(rEncoder.clsTag)
-//    }
-//
-//    what()
-//  }
+
 
 
 //  test("fromRdd"){

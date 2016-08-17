@@ -6,13 +6,11 @@ import org.apache.spark.mllib.linalg.SparseVector
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.sql._
 import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
-import org.apache.spark.sql.catalyst.encoders.{RowEncoder, ExpressionEncoder}
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.types.StructType
 
 import org.apache.spark.storage.StorageLevel
 
-import scala.reflect.ClassTag
-import scala.reflect.classTag
 
 import org.apache.spark.sql.EncoderStuff.encFor
 
