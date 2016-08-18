@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.storage.StorageLevel
 
 
-import org.apache.spark.sql.EncoderStuff.encFor
+import org.apache.spark.sql.EncoderUtil.encoderFor
 
 import scala.language.implicitConversions
 
@@ -53,37 +53,37 @@ package object sparkflow extends SQLImplicits {
   def read = new DCDataFrameReader
 
   def parallelize[T:Encoder](seq: Seq[T]): DC[T] = {
-    val encoder = encFor[T]
+    val encoder = encoderFor[T]
     new ParallelCollectionDC(encoder, seq, None)
   }
 
   def parallelize[T:Encoder](seq: Seq[T], numSlices: Int): DC[T] = {
-    val encoder = encFor[T]
+    val encoder = encoderFor[T]
     new ParallelCollectionDC(encoder, seq, Some(numSlices))
   }
 
   def textFile(path: String) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path)
-    new SourceDC[String](encFor[String],path, sourceFunc, "textFile")
+    new SourceDC[String](encoderFor[String],path, sourceFunc, "textFile")
   }
 
   def textFile(path: String,
                minPartitions: Int) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path, minPartitions)
-    new SourceDC[String](encFor[String], path, sourceFunc, "textFile")
+    new SourceDC[String](encoderFor[String], path, sourceFunc, "textFile")
   }
 
   def objectFile[T:Encoder](path: String) = {
-    implicit val tClassTag = encFor[T].clsTag
+    implicit val tClassTag = encoderFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path)
-    new SourceDC[T](encFor[T], path, sourceFunc, "objectFile")
+    new SourceDC[T](encoderFor[T], path, sourceFunc, "objectFile")
   }
 
   def objectFile[T:Encoder](path: String,
                              minPartitions: Int) = {
-    implicit val tClassTag = encFor[T].clsTag
+    implicit val tClassTag = encoderFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
-    new SourceDC[T](encFor[T], path, sourceFunc, "objectFile")
+    new SourceDC[T](encoderFor[T], path, sourceFunc, "objectFile")
   }
 
   private[sparkflow] var checkpointDir = "/tmp/sparkflow"

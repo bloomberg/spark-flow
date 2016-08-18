@@ -6,8 +6,8 @@ import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 /**
   * Created by ngoehausen on 8/9/16.
   */
-object EncoderStuff {
+object EncoderUtil {
 
-  def encFor[A : Encoder]: ExpressionEncoder[A]  = encoders.encoderFor
+  def encoderFor[A : Encoder]: ExpressionEncoder[A]  = encoders.encoderFor
 
 }

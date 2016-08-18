@@ -8,45 +8,45 @@ import com.bloomberg.sparkflow._
   * Created by ngoehausen on 4/19/16.
   */
 class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMatchers{
-//
-//  test("combineByKey"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.combineByKey[Array[Int]](Array(_), _ ++ Array(_), _ ++ _, 2)
-//
-//    Seq(1,2) should contain theSameElementsAs result.getRDD(sc).lookup(1)(0)
-//    Seq(3,4) should contain theSameElementsAs result.getRDD(sc).lookup(2)(0)
-//    result.getRDD(sc).partitions.size shouldEqual 2
-//  }
-//
-//  test("aggregateByKey"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.aggregateByKey(0)(_ + _, _ + _)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("aggregateByKey(numPartitions)"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.aggregateByKey(0, 2)(_ + _, _ + _)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//    result.getRDD(sc).partitions.size shouldEqual 2
-//  }
-//
-//  test("foldByKey"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.foldByKey(0)(_ + _)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("foldByKey(numPartitions)"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.foldByKey(0, 2)(_ + _)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//    result.getRDD(sc).partitions.size shouldEqual 2
-//  }
+
+  test("combineByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.combineByKey[Array[Int]](Array(_), _ ++ Array(_), _ ++ _, 2)
+
+    Seq(1,2) should contain theSameElementsAs result.getRDD(sc).lookup(1)(0)
+    Seq(3,4) should contain theSameElementsAs result.getRDD(sc).lookup(2)(0)
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("aggregateByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.aggregateByKey(0)(_ + _, _ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("aggregateByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.aggregateByKey(0, 2)(_ + _, _ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("foldByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("foldByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.foldByKey(0, 2)(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
 //
 //  //TODO: fix for spark 1.6.0
 ////  test("sampleByKey"){

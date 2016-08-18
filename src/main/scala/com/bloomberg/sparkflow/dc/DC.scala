@@ -15,7 +15,7 @@ import com.bloomberg.sparkflow._
 import scala.collection.Map
 import sparkflow.dc.Util._
 import sparkflow._
-import org.apache.spark.sql.EncoderStuff.encFor
+import org.apache.spark.sql.EncoderUtil.encoderFor
 import com.bloomberg.sparkflow.serialization.Hashing._
 
 /**
@@ -28,11 +28,11 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   private var assigned = false
 
   protected def computeDataset(spark: SparkSession): Dataset[T]
-  protected implicit val exprEnc: ExpressionEncoder[T] = encFor(encoder)
+  protected implicit val exprEnc: ExpressionEncoder[T] = encoderFor(encoder)
   protected implicit def classTag = exprEnc.clsTag
 
   def map[U: Encoder](f: T => U): DC[U] = {
-    val uEncoder = encFor[U]
+    val uEncoder = encoderFor[U]
     new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.map(f), Seq(hashClass(f)))
   }
 
@@ -41,12 +41,12 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def flatMap[U: Encoder](f: T => TraversableOnce[U]): DC[U] = {
-    val uEncoder = encFor[U]
+    val uEncoder = encoderFor[U]
     new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.flatMap(f), Seq(hashClass(f)))
   }
 
   def zipWithUniqueId(): DC[(T, Long)] = {
-    val longEnc = encFor[Long]
+    val longEnc = encoderFor[Long]
     val enc = ExpressionEncoder.tuple(exprEnc, longEnc)
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
@@ -81,7 +81,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def withResult[U: Encoder](dr: DR[U]): DC[(T,U)] = {
-    val enc = ExpressionEncoder.tuple(exprEnc, encFor[U])
+    val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
     new ResultDepDC(enc, this, dr)
   }
 
@@ -121,13 +121,13 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def glom()(implicit aEncoder: Encoder[Array[T]]): DC[Array[T]] = {
-    val arrEncoder = encFor[Array[T]]
+    val arrEncoder = encoderFor[Array[T]]
     new RDDTransformDC(arrEncoder, this, (rdd: RDD[T]) => rdd.glom(), Seq("glom"))
   }
 
   def cartesian[U : Encoder](other: DC[U]): DC[(T, U)] = {
-    val enc = ExpressionEncoder.tuple(exprEnc, encFor[U])
-    implicit val uClassTag = encFor[U].clsTag
+    val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
+    implicit val uClassTag = encoderFor[U].clsTag
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.cartesian(right)
     }
@@ -145,8 +145,8 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
 //  }
 
   def zip[U: Encoder](other: DC[U]): DC[(T, U)] = {
-    val enc = ExpressionEncoder.tuple(exprEnc, encFor[U])
-    implicit val uClassTag = encFor[U].clsTag
+    val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
+    implicit val uClassTag = encoderFor[U].clsTag
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
       left.zip(right)
     }
@@ -154,7 +154,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def zipWithIndex: DC[(T, Long)] = {
-    val enc = ExpressionEncoder.tuple(exprEnc, encFor[Long])
+    val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[Long])
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.zipWithIndex, Seq("zipWithIndex"))
   }
 
@@ -188,19 +188,19 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def keyBy[K: Encoder](f: T => K): DC[(K,T)] ={
-    val enc = ExpressionEncoder.tuple(encFor[K], exprEnc)
+    val enc = ExpressionEncoder.tuple(encoderFor[K], exprEnc)
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.keyBy(f), Seq(hashClass(f), "keyBy"))
   }
 
   def sliding(windowSize: Int)(implicit aEncoder: Encoder[Array[T]]): DC[Array[T]] = {
-    val arrEncoder = encFor[Array[T]]
+    val arrEncoder = encoderFor[Array[T]]
     new RDDTransformDC(arrEncoder, this, (rdd: RDD[T]) => rdd.sliding(windowSize), Seq("sliding", windowSize.toString))
   }
 
   def mapPartitions[U: Encoder](
                                   f: Iterator[T] => Iterator[U],
                                   preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
-    val uEncoder = encFor[U]
+    val uEncoder = encoderFor[U]
     new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.mapPartitions(f), Seq(hashClass(f)))
   }
 
@@ -238,7 +238,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def select[U1: Encoder ](c1: TypedColumn[T, U1]): DC[U1] = {
-    val u1Encoder = encFor[U1]
+    val u1Encoder = encoderFor[U1]
     val f = (ds: Dataset[T]) => {
       ds.select(c1)
     }
@@ -300,8 +300,8 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   def mapPartitionsWithIndex[U: Encoder](
                                           f: (Int, Iterator[T]) => Iterator[U],
                                           preservesPartitioning: Boolean = false): DC[U] = {
-    val uEncoder = encFor[U]
-    implicit val uClassTag = encFor[U].clsTag
+    val uEncoder = encoderFor[U]
+    implicit val uClassTag = encoderFor[U].clsTag
     new RDDTransformDC(uEncoder, this, (rdd: RDD[T]) => rdd.mapPartitionsWithIndex(f, preservesPartitioning), Seq(hashClass(f), preservesPartitioning.toString))
   }
 

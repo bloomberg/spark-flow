@@ -1,6 +1,7 @@
 package com.bloomberg.sparkflow.dc
 
 import org.apache.spark.sql.{Dataset, Encoder}
+import org.apache.spark.sql.EncoderUtil.encoderFor
 import org.apache.spark.{Partitioner, HashPartitioner}
 import org.apache.spark.rdd.RDD
 import scala.collection.Map
@@ -20,36 +21,51 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
      klEncoder: Encoder[(K,Long)],
      kSeqEncoder: Encoder[(K,Seq[V])],
      kArrEncoder: Encoder[(K,Array[V])]) {
-//
-//  def combineByKey[C](createCombiner: V => C,
-//                      mergeValue: (C, V) => C,
-//                      mergeCombiners: (C, C) => C,
-//                      numPartitions: Int)(implicit kcEncoder: Encoder[(K,C)]): DC[(K, C)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.combineByKey(createCombiner, mergeValue, mergeCombiners, numPartitions), self, Seq(createCombiner, mergeValue, mergeCombiners), Seq("combineByKey", numPartitions.toString))
-//  }
-//
-//  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U)(implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp), self, Seq(seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
-//  }
-//
-//  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)(seqOp: (U,V) => U, combOp: (U,U) => U)(implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue, numPartitions)(seqOp, combOp), self, (seqOp, combOp), Seq("aggregateByKey", zeroValue.toString, numPartitions.toString))
-//  }
-//
-//  def foldByKey(zeroValue: V)(func: (V,V) => V): DC[(K,V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue)(func), self, func, Seq("foldByKey", zeroValue.toString))
-//  }
-//
-//  def foldByKey(zeroValue: V, numPartitions: Int)(func: (V,V) => V): DC[(K,V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue, numPartitions)(func), self, func, Seq("foldByKey", zeroValue.toString, numPartitions.toString))
-//  }
+
+  def combineByKey[C](createCombiner: V => C,
+                      mergeValue: (C, V) => C,
+                      mergeCombiners: (C, C) => C,
+                      numPartitions: Int)(implicit kcEncoder: Encoder[(K,C)]): DC[(K, C)] = {
+    val encoder = encoderFor[(K,C)]
+    val function = (rdd: RDD[(K,V)]) => rdd.combineByKey(createCombiner, mergeValue, mergeCombiners, numPartitions)
+    val functionHashTargets = Seq(createCombiner, mergeValue, mergeCombiners)
+    val hashTargets = Seq("combineByKey", numPartitions.toString)
+    new RDDTransformDC(encoder, self, function, functionHashTargets, hashTargets)
+  }
+
+  def aggregateByKey[U: ClassTag](zeroValue: U)(seqOp: (U,V) => U, combOp: (U,U) => U)
+                                 (implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
+    val encoder = encoderFor[(K,U)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue)(seqOp, combOp)
+    new RDDTransformDC(encoder, self, resultFunction, Seq(seqOp, combOp), Seq("aggregateByKey", zeroValue.toString))
+  }
+
+  def aggregateByKey[U: ClassTag](zeroValue: U, numPartitions: Int)
+                                 (seqOp: (U,V) => U, combOp: (U,U) => U)
+                                 (implicit kUEncoder: Encoder[(K,U)]): DC[(K,U)] = {
+    val encoder = encoderFor[(K,U)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.aggregateByKey(zeroValue, numPartitions)(seqOp, combOp)
+    new RDDTransformDC(encoder, self, resultFunction, Seq("aggregateByKey", zeroValue.toString, numPartitions.toString))
+  }
+
+  def foldByKey(zeroValue: V)(func: (V,V) => V): DC[(K,V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue)(func)
+    new RDDTransformDC(encoder, self, resultFunction, func, Seq("foldByKey", zeroValue.toString))
+  }
+
+  def foldByKey(zeroValue: V, numPartitions: Int)(func: (V,V) => V): DC[(K,V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue, numPartitions)(func)
+    new RDDTransformDC(encoder, self, resultFunction, func, Seq("foldByKey", zeroValue.toString, numPartitions.toString))
+  }
 //
 //  def sampleByKey(withReplacement: Boolean,
 //                  fractions: Map[K, Double],
 //                  seed: Long = Random.nextLong): DC[(K,V)] = {
 //    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.sampleByKey(withReplacement, fractions, seed), self, Seq("sampleByKey", withReplacement.toString, fractions.toString, seed.toString))
 //  }
-//
+
 ////  Experimental
 //  def sampleByKeyExact(withReplacement: Boolean,
 //                       fractions: Map[K, Double],
