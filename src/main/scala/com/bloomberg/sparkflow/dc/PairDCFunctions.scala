@@ -59,62 +59,79 @@ class PairDCFunctions[K,V](self: DC[(K,V)])
     val resultFunction = (rdd: RDD[(K,V)]) => rdd.foldByKey(zeroValue, numPartitions)(func)
     new RDDTransformDC(encoder, self, resultFunction, func, Seq("foldByKey", zeroValue.toString, numPartitions.toString))
   }
-//
-//  def sampleByKey(withReplacement: Boolean,
-//                  fractions: Map[K, Double],
-//                  seed: Long = Random.nextLong): DC[(K,V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.sampleByKey(withReplacement, fractions, seed), self, Seq("sampleByKey", withReplacement.toString, fractions.toString, seed.toString))
-//  }
+
+  def sampleByKey(withReplacement: Boolean,
+                  fractions: Map[K, Double],
+                  seed: Long = Random.nextLong): DC[(K,V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.sampleByKey(withReplacement, fractions, seed)
+    new RDDTransformDC(encoder, self, resultFunction, Seq("sampleByKey", withReplacement.toString, fractions.toString, seed.toString))
+  }
 
 ////  Experimental
-//  def sampleByKeyExact(withReplacement: Boolean,
-//                       fractions: Map[K, Double],
-//                       seed: Long = Random.nextLong): DC[(K, V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.sampleByKeyExact(withReplacement, fractions, seed), self, Seq("sampleByKeyExact", withReplacement.toString, fractions.toString, seed.toString))
-//  }
-//
-//  def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.reduceByKey(func), self, func, Seq("reduceByKey"))
-//  }
-//
-//  def reduceByKey(func: (V, V) => V, numPartitions: Int): DC[(K, V)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions), self, func, Seq("reduceByKey", numPartitions.toString))
-//  }
-//
-//  def countApproxDistinctByKey(relativeSD: Double = 0.05): DC[(K, Long)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD), self, Seq("countApproxDistinctByKey", relativeSD.toString))
-//  }
-//
-//  def countApproxDistinctByKey(relativeSD: Double, numPartitions: Int): DC[(K, Long)] = {
-//    new RDDTransformDC((rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD, numPartitions), self, Seq("countApproxDistinctByKey", relativeSD.toString, numPartitions.toString))
-//  }
-//
-//  def groupByKey(): DC[(K, Seq[V])] = {
-//    new RDDTransformDC((rdd: RDD[(K, V)]) => rdd.groupByKey().map{case (k, values) => (k, values.toSeq)}, self, Seq("groupByKey"))
-//  }
-//
-//  def groupByKey(numPartitions: Int): DC[(K, Seq[V])] = {
-//    new RDDTransformDC((rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions).map{case (k, values) => (k, values.toSeq)}, self, Seq("groupByKey","groupByKey", numPartitions.toString))
-//  }
-//
-//
-//  def join[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
-//    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
-//      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
-//      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
-//      left.join(right)
-//    }
-//    new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
-//  }
-//
-//  def join[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
-//    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
-//      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
-//      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
-//      left.join(right, numPartitions)
-//    }
-//    new MultiInputPairDC[(K, (V, W)), K](Seq(self, other), resultFunc)
-//  }
+  def sampleByKeyExact(withReplacement: Boolean,
+                       fractions: Map[K, Double],
+                       seed: Long = Random.nextLong): DC[(K, V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.sampleByKeyExact(withReplacement, fractions, seed)
+    new RDDTransformDC(encoder, self, resultFunction, Seq("sampleByKeyExact", withReplacement.toString, fractions.toString, seed.toString))
+  }
+
+  def reduceByKey(func: (V, V) => V): DC[(K, V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.reduceByKey(func)
+    new RDDTransformDC(encoder, self, resultFunction, func, Seq("reduceByKey"))
+  }
+
+  def reduceByKey(func: (V, V) => V, numPartitions: Int): DC[(K, V)] = {
+    val encoder = encoderFor[(K,V)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.reduceByKey(func, numPartitions)
+    new RDDTransformDC(encoder, self, resultFunction, func, Seq("reduceByKey", numPartitions.toString))
+  }
+
+  def countApproxDistinctByKey(relativeSD: Double = 0.05): DC[(K, Long)] = {
+    val encoder = encoderFor[(K,Long)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD)
+    new RDDTransformDC(encoder, self, resultFunction, Seq("countApproxDistinctByKey", relativeSD.toString))
+  }
+
+  def countApproxDistinctByKey(relativeSD: Double, numPartitions: Int): DC[(K, Long)] = {
+    val encoder = encoderFor[(K,Long)]
+    val resultFunction = (rdd: RDD[(K,V)]) => rdd.countApproxDistinctByKey(relativeSD, numPartitions)
+    new RDDTransformDC(encoder, self, resultFunction, Seq("countApproxDistinctByKey", relativeSD.toString, numPartitions.toString))
+  }
+
+  def groupByKey(): DC[(K, Seq[V])] = {
+    val encoder = encoderFor[(K,Seq[V])]
+    val resultFunction = (rdd: RDD[(K, V)]) => rdd.groupByKey().map{case (k, values) => (k, values.toSeq)}
+    new RDDTransformDC(encoder, self, resultFunction, Seq("groupByKey"))
+  }
+
+  def groupByKey(numPartitions: Int): DC[(K, Seq[V])] = {
+    val encoder = encoderFor[(K,Seq[V])]
+    val resultFunction = (rdd: RDD[(K, V)]) => rdd.groupByKey(numPartitions).map{case (k, values) => (k, values.toSeq)}
+    new RDDTransformDC(encoder, self, resultFunction, Seq("groupByKey","groupByKey", numPartitions.toString))
+  }
+
+  def join[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
+    val encoder = encoderFor[(K,(V,W))]
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.join(right)
+    }
+    new MultiInputPairDC[(K, (V, W)), K](encoder, Seq(self, other), resultFunc)
+  }
+
+  def join[W](other: DC[(K,W)], numPartitions: Int)(implicit kvwEncoder: Encoder[(K,(V,W))]): DC[(K, (V, W))] = {
+    val encoder = encoderFor[(K,(V,W))]
+    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {
+      val left = rdds(0).asInstanceOf[RDD[(K,V)]]
+      val right = rdds(1).asInstanceOf[RDD[(K,W)]]
+      left.join(right, numPartitions)
+    }
+    new MultiInputPairDC[(K, (V, W)), K](encoder, Seq(self, other), resultFunc)
+  }
 //
 //  def leftOuterJoin[W](other: DC[(K,W)])(implicit kvwEncoder: Encoder[(K,(V,Option[W]))]): DC[(K, (V, Option[W]))] = {
 //    val resultFunc = (rdds: Seq[RDD[_ <: Product2[K, _]]]) => {

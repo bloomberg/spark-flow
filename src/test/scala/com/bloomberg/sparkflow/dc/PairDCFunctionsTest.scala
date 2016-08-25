@@ -63,35 +63,35 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
 ////    Seq((1,1), (2,4)) should contain theSameElementsAs result.getRDD(sc).collect()
 ////  }
 //
-//  test("reduceByKey"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.reduceByKey(_ + _)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("reduceByKey(numPartitions)"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.reduceByKey(_ + _, 2)
-//
-//    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
-//    result.getRDD(sc).partitions.size shouldEqual 2
-//  }
-//
-//  test("countApproxDistinctByKey"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.countApproxDistinctByKey(0.3)
-//
-//    Seq((1,2), (2,2)) should contain theSameElementsAs result.getRDD(sc).collect()
-//  }
-//
-//  test("countApproxDistinctByKey(numPartitions)"){
-//    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
-//    val result = input.countApproxDistinctByKey(0.3, 2)
-//
-//    Seq((1,2), (2,2)) should contain theSameElementsAs result.getRDD(sc).collect()
-//    result.getRDD(sc).partitions.size shouldEqual 2
-//  }
+  test("reduceByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.reduceByKey(_ + _)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("reduceByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.reduceByKey(_ + _, 2)
+
+    Seq((1,3), (2,7)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
+
+  test("countApproxDistinctByKey"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.countApproxDistinctByKey(0.3)
+
+    Seq((1,2), (2,2)) should contain theSameElementsAs result.getRDD(sc).collect()
+  }
+
+  test("countApproxDistinctByKey(numPartitions)"){
+    val input = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
+    val result = input.countApproxDistinctByKey(0.3, 2)
+
+    Seq((1,2), (2,2)) should contain theSameElementsAs result.getRDD(sc).collect()
+    result.getRDD(sc).partitions.size shouldEqual 2
+  }
 //
 //////
 ////  test("groupByKey"){
