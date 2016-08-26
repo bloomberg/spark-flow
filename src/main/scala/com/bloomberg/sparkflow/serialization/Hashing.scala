@@ -2,8 +2,8 @@ package com.bloomberg.sparkflow.serialization
 
 import java.security.MessageDigest
 
+import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassReader, getClassesAndSerializedFields}
 import com.google.common.io.BaseEncoding
-import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassesAndSerializedFields, getClassReader}
 
 
 /**

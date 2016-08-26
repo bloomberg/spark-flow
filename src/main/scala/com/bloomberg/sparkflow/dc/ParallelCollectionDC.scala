@@ -1,7 +1,7 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
-import org.apache.spark.sql.{SparkSession, Encoder}
+import org.apache.spark.sql.{Encoder, SparkSession}
 
 
 /**

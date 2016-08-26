@@ -19,7 +19,6 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     Thread.currentThread().getContextClassLoader.getResource(fileName).toString
   }
 
-  // TODO: upgrade to latest spark for builtin csv reader
   test("csv"){
     val cars = read
       .format("csv")
@@ -51,18 +50,6 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
     providerURLS.getDF(sc).show()
     println(dc.getRDD(sc).first())
   }
-
-
-
-
-//  test("fromRdd"){
-//    val trashFires = parallelize(1 to 10)
-//      .map(_ => TrashFire(Random.nextDouble(), Random.nextDouble()))
-//
-//    val dfdc = trashFires
-//    dfdc.select("temp").getDF(sc).show()
-//
-//  }
 
   test("union"){
     val trashFires = parallelize(Seq(TrashFire(1,1)))

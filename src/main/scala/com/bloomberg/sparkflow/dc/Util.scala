@@ -6,7 +6,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 
 import scala.reflect.{ClassTag, classTag}
-import scala.util.Try
 
 /**
   * Created by ngoehausen on 5/18/16.
@@ -14,7 +13,7 @@ import scala.util.Try
 object Util {
 
 
-  private[dc] def saveCheckpoint[T:ClassTag](checkpointPath: String, dataset: Dataset[T]) = {
+  private[dc] def saveCheckpoint[T: ClassTag](checkpointPath: String, dataset: Dataset[T]) = {
     assert(dataset != null)
     dataset.write.mode(SaveMode.Overwrite).parquet(checkpointPath)
   }
@@ -22,7 +21,7 @@ object Util {
   private[dc] def loadCheckpoint[T: ClassTag](checkpointPath: String, spark: SparkSession)(implicit tEncoder: Encoder[T]): Option[Dataset[T]] = {
     if (pathExists(checkpointPath, spark.sparkContext)) {
       val dataFrame = spark.read.parquet(checkpointPath)
-      val dataset = if(tEncoder.clsTag.equals(classTag[Row])){
+      val dataset = if (tEncoder.clsTag.equals(classTag[Row])) {
         dataFrame.asInstanceOf[Dataset[T]]
       } else {
         dataFrame.as[T]

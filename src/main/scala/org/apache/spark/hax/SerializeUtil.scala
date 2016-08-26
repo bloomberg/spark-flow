@@ -16,19 +16,19 @@ object SerializeUtil {
 
   private val serializer = new JavaSerializer(new SparkConf()).newInstance()
 
-  private def serialize[T:ClassTag](obj: T) ={
+  private def serialize[T: ClassTag](obj: T) = {
     serializer.serialize(obj)
   }
 
-  private def deserialize[T:ClassTag](b: ByteBuffer) ={
+  private def deserialize[T: ClassTag](b: ByteBuffer) = {
     serializer.deserialize[T](b)
   }
 
-  def objToString[T:ClassTag](obj: T): String = {
+  def objToString[T: ClassTag](obj: T): String = {
     BaseEncoding.base64().encode(serialize(obj).array())
   }
 
-  def stringToObj[T:ClassTag](s: String): T = {
+  def stringToObj[T: ClassTag](s: String): T = {
     deserialize(ByteBuffer.wrap(BaseEncoding.base64().decode(s)))
   }
 

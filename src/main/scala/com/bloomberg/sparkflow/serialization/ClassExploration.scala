@@ -1,9 +1,9 @@
 package com.bloomberg.sparkflow.serialization
 
-import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
-import reflect.runtime.{universe => ru}
+import org.objectweb.asm._
 
+import scala.reflect.runtime.{universe => ru}
 import scala.util.Try
 
 /**
@@ -21,7 +21,7 @@ object ClassExploration {
     var methodsEncountered = Set[OwnerName]()
     var encounteredSerializedFields = Set[String]()
 
-    while(toExplore.nonEmpty){
+    while (toExplore.nonEmpty) {
       val obj = toExplore.head
       toExplore = toExplore.tail
 
@@ -60,9 +60,10 @@ object ClassExploration {
 
     val nestedObjects = fields
       .filter(_.getName != "serialVersionUID")
-      .map(f =>{
+      .map(f => {
         f.setAccessible(true)
-        f.get(func)}).filter(_!= null)
+        f.get(func)
+      }).filter(_ != null)
 
     nestedObjects.toSet
   }
@@ -73,7 +74,9 @@ object ClassExploration {
   }
 
   def hasFields(obj: AnyRef) = {
-    Try{obj.getClass.getDeclaredFields}.isSuccess
+    Try {
+      obj.getClass.getDeclaredFields
+    }.isSuccess
   }
 
   def getObjFromModule(moduleName: String, name: String): AnyRef = {
@@ -88,9 +91,11 @@ object ClassExploration {
     var objectsEncountered = Set(obj)
     var methodsEncountered = Set[OwnerName]()
 
-    var toExplore = Try{getMethodsUsed(obj)}.toOption.toSet.flatten
+    var toExplore = Try {
+      getMethodsUsed(obj)
+    }.toOption.toSet.flatten
 
-    while(toExplore.nonEmpty) {
+    while (toExplore.nonEmpty) {
 
       val objects = toExplore.flatMap(ownerName => Try {
         getObjFromModule(ownerName.owner, ownerName.name)
@@ -124,7 +129,7 @@ object ClassExploration {
   def getMethodsUsed(obj: AnyRef): Set[OwnerName] = {
     val reader = getClassReader(obj.getClass)
     val ownerNames = scala.collection.mutable.Set[OwnerName]()
-    reader.accept(new ClassMethodExplorer(APPLYMC2,ownerNames), 0)
+    reader.accept(new ClassMethodExplorer(APPLYMC2, ownerNames), 0)
     ownerNames.toSet
   }
 
@@ -154,7 +159,7 @@ object ClassExploration {
                               desc: String,
                               sig: String,
                               exceptions: Array[String]): MethodVisitor = {
-//      println(s"Class visitMethod: name: $name, desc: $desc")
+      //      println(s"Class visitMethod: name: $name, desc: $desc")
       if (name == methodName) {
         new MethodExplorer(ownerNames)
       } else {

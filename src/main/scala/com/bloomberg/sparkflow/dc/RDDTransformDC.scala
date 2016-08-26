@@ -1,12 +1,9 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
-import org.apache.spark.SparkContext
+import com.bloomberg.sparkflow.serialization.Hashing._
 import org.apache.spark.rdd.RDD
-import Hashing._
-import org.apache.spark.sql.{Encoder, Dataset, SparkSession}
-
-import scala.reflect.ClassTag
+import org.apache.spark.sql.{Encoder, SparkSession}
 
 /**
   * Created by ngoehausen on 3/23/16.
@@ -30,7 +27,6 @@ private[sparkflow] class RDDTransformDC[U, T]
   def this(uEncoder: Encoder[U], prev: DC[T], f: RDD[T] => RDD[U], functionHashTargets: Seq[AnyRef], StringHashTargets: Seq[String]) = {
     this(uEncoder, prev, f, functionHashTargets.map(hashClass).mkString("") +: StringHashTargets)
   }
-
 
 
   override def computeSignature() = {

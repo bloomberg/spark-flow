@@ -36,13 +36,13 @@ class DoubleDCFunctions(self: DC[Double]) {
     self.mapToResult(_.sampleVariance)
   }
 
-//  Experimental
+  //  Experimental
   def meanApprox(timeout: Long,
                  confidence: Double = 0.95): DR[PartialResult[BoundedDouble]] = {
     self.mapToResult(_.meanApprox(timeout, confidence))
   }
 
-//  Experimental
+  //  Experimental
   def sumApprox(timeout: Long,
                 confidence: Double = 0.95): DR[PartialResult[BoundedDouble]] = {
     self.mapToResult(_.sumApprox(timeout, confidence))

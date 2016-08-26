@@ -2,21 +2,20 @@ package com.bloomberg.sparkflow.dc
 
 import java.io.File
 
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql._
-import org.apache.spark.mllib.rdd.RDDFunctions._
-import org.apache.spark.sql.catalyst.encoders._
-import scala.language.implicitConversions
-
-import scala.reflect.ClassTag
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
-import scala.collection.Map
-import sparkflow.dc.Util._
-import sparkflow._
-import org.apache.spark.sql.EncoderUtil.encoderFor
+import com.bloomberg.sparkflow.dc.Util._
 import com.bloomberg.sparkflow.serialization.Hashing._
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.rdd.RDDFunctions._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.EncoderUtil.encoderFor
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.encoders._
+
+import scala.collection.Map
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 /**
   * DistributedCollection, analogous to RDD
@@ -28,7 +27,9 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   private var assigned = false
 
   protected def computeDataset(spark: SparkSession): Dataset[T]
+
   protected implicit val exprEnc: ExpressionEncoder[T] = encoderFor(encoder)
+
   protected implicit def classTag = exprEnc.clsTag
 
   def map[U: Encoder](f: T => U): DC[U] = {
@@ -51,8 +52,8 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.zipWithUniqueId, Seq("zipWithUniqueId"))
   }
 
-  def groupBy[K: Encoder: ClassTag](func: T => K)(implicit kvEncoder: Encoder[(K,T)]): KeyValueGroupedDC[K,T] = {
-    new KeyValueGroupedDCImpl(this, (ds: Dataset[T]) => ds.groupByKey(func),Seq())
+  def groupBy[K: Encoder : ClassTag](func: T => K)(implicit kvEncoder: Encoder[(K, T)]): KeyValueGroupedDC[K, T] = {
+    new KeyValueGroupedDCImpl(this, (ds: Dataset[T]) => ds.groupByKey(func), Seq())
   }
 
   def sample(
@@ -76,11 +77,11 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     this.union(other)
   }
 
-  def mapToResult[U](f: RDD[T] => U): DR[U] ={
-    new DRImpl[T,U](this, f)
+  def mapToResult[U](f: RDD[T] => U): DR[U] = {
+    new DRImpl[T, U](this, f)
   }
 
-  def withResult[U: Encoder](dr: DR[U]): DC[(T,U)] = {
+  def withResult[U: Encoder](dr: DR[U]): DC[(T, U)] = {
     val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
     new ResultDepDC(enc, this, dr)
   }
@@ -125,7 +126,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new RDDTransformDC(arrEncoder, this, (rdd: RDD[T]) => rdd.glom(), Seq("glom"))
   }
 
-  def cartesian[U : Encoder](other: DC[U]): DC[(T, U)] = {
+  def cartesian[U: Encoder](other: DC[U]): DC[(T, U)] = {
     val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
     implicit val uClassTag = encoderFor[U].clsTag
     val resultFunc = (left: RDD[T], right: RDD[U]) => {
@@ -134,15 +135,15 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new MultiInputDC(enc, this, other, resultFunc)
   }
 
-//  def groupBy[K:Encoder](f: T => K): DC[(K, Array[T])] = {
-//    val arrayEnc = encFor[Array[T]]
-//    val enc = ExpressionEncoder.tuple(encFor[K], arrayEnc)
-//    new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.groupBy(f).map{case (k, values) => (k, values.toArray)}, Seq("groupBy", hashClass(f)))
-//  }
-//
-//  def groupBy[K](f: T => K, numPartitions: Int)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
-//    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f, numPartitions), f, Seq("groupBy", numPartitions.toString))
-//  }
+  //  def groupBy[K:Encoder](f: T => K): DC[(K, Array[T])] = {
+  //    val arrayEnc = encFor[Array[T]]
+  //    val enc = ExpressionEncoder.tuple(encFor[K], arrayEnc)
+  //    new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.groupBy(f).map{case (k, values) => (k, values.toArray)}, Seq("groupBy", hashClass(f)))
+  //  }
+  //
+  //  def groupBy[K](f: T => K, numPartitions: Int)(implicit kt: ClassTag[K]): DC[(K, Iterable[T])] = {
+  //    new RDDTransformDC(this, (rdd: RDD[T]) => rdd.groupBy(f, numPartitions), f, Seq("groupBy", numPartitions.toString))
+  //  }
 
   def zip[U: Encoder](other: DC[U]): DC[(T, U)] = {
     val enc = ExpressionEncoder.tuple(exprEnc, encoderFor[U])
@@ -187,7 +188,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new RDDTransformDC(encoder, this, (rdd: RDD[T]) => rdd.sortBy(f, ascending, numPartitions), Seq(hashClass(f), "sortBy", ascending.toString, numPartitions.toString))
   }
 
-  def keyBy[K: Encoder](f: T => K): DC[(K,T)] ={
+  def keyBy[K: Encoder](f: T => K): DC[(K, T)] = {
     val enc = ExpressionEncoder.tuple(encoderFor[K], exprEnc)
     new RDDTransformDC(enc, this, (rdd: RDD[T]) => rdd.keyBy(f), Seq(hashClass(f), "keyBy"))
   }
@@ -198,8 +199,8 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def mapPartitions[U: Encoder](
-                                  f: Iterator[T] => Iterator[U],
-                                  preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
+                                 f: Iterator[T] => Iterator[U],
+                                 preservesPartitioning: Boolean = false)(implicit uEncoder: Encoder[U]): DC[U] = {
     val uEncoder = encoderFor[U]
     new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.mapPartitions(f), Seq(hashClass(f)))
   }
@@ -213,7 +214,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   @scala.annotation.varargs
   def select(cols: Column*): DC[Row] = {
     val f = (ds: Dataset[T]) => {
-      ds.select(cols:_*)
+      ds.select(cols: _*)
     }
     val hashTarget = cols.map(_.toString())
     new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
@@ -222,7 +223,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   @scala.annotation.varargs
   def select(col: String, cols: String*): DC[Row] = {
     val f = (ds: Dataset[T]) => {
-      ds.select(col, cols:_*)
+      ds.select(col, cols: _*)
     }
     val hashTarget = Seq("select", col) ++ cols
     new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
@@ -230,14 +231,14 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
 
   def selectExpr(exprs: String*): DC[Row] = {
     val f = (ds: Dataset[T]) => {
-      ds.selectExpr(exprs:_*)
+      ds.selectExpr(exprs: _*)
     }
     val hashTarget = Seq("selectExpr") ++ exprs
     new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
 
   }
 
-  def select[U1: Encoder ](c1: TypedColumn[T, U1]): DC[U1] = {
+  def select[U1: Encoder](c1: TypedColumn[T, U1]): DC[U1] = {
     val u1Encoder = encoderFor[U1]
     val f = (ds: Dataset[T]) => {
       ds.select(c1)
@@ -247,7 +248,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
 
-  def filter(condition: Column): DC[T] =  {
+  def filter(condition: Column): DC[T] = {
     val f = (ds: Dataset[T]) => {
       ds.filter(condition)
     }
@@ -256,10 +257,10 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new DatasetTransformDC(encoder, this, f, hashTarget)
   }
 
-//  def unionAll(other: DC[Row])(implicit rEncoder: Encoder[Row]): DC[Row] = {
-//    new UnionDC[Row](self, other)
-//  }
-//
+  //  def unionAll(other: DC[Row])(implicit rEncoder: Encoder[Row]): DC[Row] = {
+  //    new UnionDC[Row](self, other)
+  //  }
+  //
   def drop(colName: String): DC[Row] = {
     val f = (ds: Dataset[T]) => {
       ds.drop(colName)
@@ -267,30 +268,31 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     val hashTarget = Seq("drop", colName)
     new DatasetTransformDC(emptyRowEncoder, this, f, hashTarget)
   }
-//
-//  def apply(colName: String) = {
-//    new Column(colName)
-//  }
-//
-//  def join(right: DC[Row]): DC[Row] = {
-//    val f = (left: DataFrame, right: DataFrame) => {
-//      left.join(right)
-//    }
-//    val hashTarget = Seq("join")
-//    new MultiDFTransformDC(self, right, f, hashTarget)
-//  }
-//
-//  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
-//
-//  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
-//
-//  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
-//    val f = (left: DataFrame, right: DataFrame) => {
-//      left.join(right, joinExprs, joinType)
-//    }
-//    val hashTarget = Seq("join", joinType, joinExprs.toString())
-//    new MultiDFTransformDC(self, right, f, hashTarget)
-//  }
+
+  //
+  //  def apply(colName: String) = {
+  //    new Column(colName)
+  //  }
+  //
+  //  def join(right: DC[Row]): DC[Row] = {
+  //    val f = (left: DataFrame, right: DataFrame) => {
+  //      left.join(right)
+  //    }
+  //    val hashTarget = Seq("join")
+  //    new MultiDFTransformDC(self, right, f, hashTarget)
+  //  }
+  //
+  //  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
+  //
+  //  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
+  //
+  //  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
+  //    val f = (left: DataFrame, right: DataFrame) => {
+  //      left.join(right, joinExprs, joinType)
+  //    }
+  //    val hashTarget = Seq("join", joinType, joinExprs.toString())
+  //    new MultiDFTransformDC(self, right, f, hashTarget)
+  //  }
 
 
   def getRDD(spark: SparkSession): RDD[T] = {
@@ -363,7 +365,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
 
-//  Actions
+  //  Actions
 
   def foreach(f: T => Unit): DR[Unit] = {
     this.mapToResult(_.foreach(f))
@@ -381,11 +383,11 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     this.mapToResult(_.toLocalIterator)
   }
 
-  def reduce(f: (T,T) => T): DR[T] = {
+  def reduce(f: (T, T) => T): DR[T] = {
     this.mapToResult(_.reduce(f))
   }
 
-  def treeReduce(f: (T,T) => T, depth: Int = 2): DR[T] = {
+  def treeReduce(f: (T, T) => T, depth: Int = 2): DR[T] = {
     this.mapToResult(_.treeReduce(f, depth))
   }
 
@@ -411,7 +413,7 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     this.mapToResult(_.countByValue)
   }
 
-//  Experimental
+  //  Experimental
   def countApproxDistinct(p: Int, sp: Int): DR[Long] = {
     this.mapToResult(_.countApproxDistinct(p, sp))
   }
@@ -452,22 +454,18 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
 
 object DC {
 
-  implicit def dcToPairDCFunctions[K, V](dc: DC[(K, V)])
-    (implicit kt: ClassTag[K],
-     vt: ClassTag[V],
-     ord: Ordering[K] = null,
-     kEncoder: Encoder[K],
-     vEncoder: Encoder[V],
-     kvEncoder: Encoder[(K,V)],
-     klEncoder: Encoder[(K,Long)],
-     kSeqEncoder: Encoder[(K,Seq[V])],
-     kArrEncoder: Encoder[(K,Array[V])]): PairDCFunctions[K, V] = {
+  implicit def dcToPairDCFunctions[K: Encoder, V: Encoder](dc: DC[(K, V)])
+                                                          (implicit kt: ClassTag[K],
+                                                           vt: ClassTag[V],
+                                                           ord: Ordering[K] = null,
+                                                           kSeqEncoder: Encoder[(K, Seq[V])],
+                                                           kArrEncoder: Encoder[(K, Array[V])]): PairDCFunctions[K, V] = {
     new PairDCFunctions(dc)
   }
 
-  implicit def dcToSecondaryPairDCFunctions[K, K2, V](dc: DC[((K,K2), V)])
-    (implicit kt: ClassTag[K], k2t: ClassTag[K2],vt: ClassTag[V], ord: Ordering[(K,K2)] = null,
-     kk2vEncoder: Encoder[((K,K2), V)]): SecondaryPairDCFunctions[K, K2, V] = {
+  implicit def dcToSecondaryPairDCFunctions[K, K2, V](dc: DC[((K, K2), V)])
+                                                     (implicit kt: ClassTag[K], k2t: ClassTag[K2], vt: ClassTag[V], ord: Ordering[(K, K2)] = null,
+                                                      kk2vEncoder: Encoder[((K, K2), V)]): SecondaryPairDCFunctions[K, K2, V] = {
     new SecondaryPairDCFunctions(dc)
   }
 

@@ -1,9 +1,8 @@
 package com.bloomberg.sparkflow.dc
 
+import com.bloomberg.sparkflow.getSpark
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
-import scala.reflect.ClassTag
-import com.bloomberg.sparkflow.getSpark
 
 /**
   * Deferred Result
