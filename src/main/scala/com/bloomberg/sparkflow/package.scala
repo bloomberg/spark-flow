@@ -96,4 +96,10 @@ package object sparkflow extends SQLImplicits {
     defaultPersistence = storageLevel
   }
 
+  private[sparkflow] var autoCachingEnabled = true
+
+  def setAutoCaching(enabled: Boolean) = {
+    autoCachingEnabled = enabled
+  }
+
 }

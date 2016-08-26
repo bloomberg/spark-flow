@@ -4,7 +4,11 @@ import com.bloomberg.sparkflow.serialization.Hashing
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Encoder, SparkSession}
 
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.reflect.ClassTag
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 /**
   * Created by ngoehausen on 4/19/16.
@@ -18,7 +22,9 @@ class MultiInputPairDC[T: ClassTag, K: ClassTag](tEncoder: Encoder[T], inputs: S
   }
 
   override def computeDataset(spark: SparkSession) = {
-    val rdd = f(inputs.map(_.getRDD(spark)))
+    val rddFutures = inputs.map(dc => Future{dc.getRDD(spark)})
+    val rdds = rddFutures.map(rddFuture => Await.result(rddFuture, Duration.Inf))
+    val rdd = f(rdds)
     spark.createDataset(rdd)
   }
 
