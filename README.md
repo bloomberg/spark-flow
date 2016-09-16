@@ -1,18 +1,18 @@
 # spark-flow
 
-Automatic checkpointing with logical signatures.
+This is a library for organizing batch processing pipelines in spark and handle automatic checkpointing of intermediate results. The core type is a DC (Distributed Collection) which is analagous to a spark Dataset. DCs have an api encompassing RDDs, Datasets, and Dataframes.
 
-Entirely lazy pipeline definitions.
+A logical pipeline can be constructed entirely lazily without a spark context. Pass in a spark context to any DC to get the corresponding Dataset, RDD or Dataframe.
 
-Same friendly api as spark.
+## Building Locally
+```sbt publishLocal```
+
+## Include in project
+```libraryDependencies += "com.bloomberg" %% "spark-flow" % "0.1.0" ```
 
 
-## Roadmap
-* more complete rdd api coverage
-* load from dataframe reader
-* more complete dataframe api coverage
-* sql transforms integrated with dependency graph
-* use dataset backed DCs (wait until spark 2.0)
+## Upcoming
+* graphx support
 * DAG viewer frontend attached to running process
 * component / pipeline abstractions
 * debug run mode with auto Try wrapped functions and trapped failures
