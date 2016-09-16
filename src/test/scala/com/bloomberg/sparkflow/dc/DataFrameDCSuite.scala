@@ -38,9 +38,6 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 
     val dc = read.json(testFile(path)).repartition(10)
 
-    val sQLContext = SQLContext.getOrCreate(sc)
-    val df = sQLContext.read.json(testFile(path)).show()
-
     dc.getDF(sc).show()
 
     val providerURLS = dc.select("provider_urls").checkpoint()

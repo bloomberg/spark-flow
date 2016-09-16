@@ -32,6 +32,12 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
 
   protected implicit def classTag = exprEnc.clsTag
 
+  def as[U : Encoder]: DC[U] = {
+    val uEncoder = encoderFor[U]
+    new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.as[U], Seq("as"))
+  }
+
+
   def map[U: Encoder](f: T => U): DC[U] = {
     val uEncoder = encoderFor[U]
     new DatasetTransformDC(uEncoder, this, (ds: Dataset[T]) => ds.map(f), Seq(hashClass(f)))
@@ -210,8 +216,22 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   Dataframe stuff
    */
 
+  def toDF(): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.toDF()
+    }
+    new DatasetTransformDC(emptyRowEncoder, this, f, Seq("toDF"))
+  }
 
-  @scala.annotation.varargs
+  def toDF(colNames: String*): DC[Row] = {
+    val f = (ds: Dataset[T]) => {
+      ds.toDF(colNames: _*)
+    }
+    new DatasetTransformDC(emptyRowEncoder, this, f, colNames)
+  }
+
+
+    @scala.annotation.varargs
   def select(cols: Column*): DC[Row] = {
     val f = (ds: Dataset[T]) => {
       ds.select(cols: _*)
@@ -311,7 +331,8 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
   }
 
   def getDF(spark: SparkSession): DataFrame = {
-    getDataset(spark).toDF()
+    val df = getDataset(spark).toDF()
+    df.toDF()
   }
 
   def getDataset(sc: SparkContext): Dataset[T] = {
