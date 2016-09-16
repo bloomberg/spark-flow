@@ -3,7 +3,6 @@ package com.bloomberg.sparkflow.dc
 import com.holdenkarau.spark.testing.SharedSparkContext
 import org.apache.spark.mllib.clustering.LDA
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 import org.scalatest._
 
@@ -16,9 +15,6 @@ import com.bloomberg.sparkflow._
 class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
 
   test("normalize"){
-
-
-
     val numbers: DC[Int] = parallelize(1 to 10)
     val doubles: DC[Double] = numbers.map(_.toDouble)
     val sum: DR[Double] = doubles.sum
@@ -38,10 +34,6 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     val ldaModel = new LDA().setK(3).run(corpus)
     println(ldaModel)
      */
-//    val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
-//    val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}
-//    val ldaModel = new LDA().setK(3).run(corpus)
-
 
     val randomVecs = parallelize(1 to 100).map(i => Vectors.dense(Seq.fill(10)(Random.nextDouble()).toArray))
     val corpus = randomVecs.zipWithUniqueId().map{case (k,v) => (v,k)}

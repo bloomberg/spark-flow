@@ -1,7 +1,7 @@
 package com.bloomberg.sparkflow.graphs
 
-import com.bloomberg.sparkflow._
-import com.bloomberg.sparkflow.dc.{DC, Dependency}
+import com.bloomberg.sparkflow.dc.Dependency
+
 import scala.collection.mutable._
 
 /**
@@ -12,15 +12,17 @@ import scala.collection.mutable._
 object Util {
 
   case class Edge(src: String, dest: String)
+
   case class Node(id: String)
+
   case class Graph(nodes: Set[Node], edges: Set[Edge])
 
-  def buildDAG(start: Dependency[_]) : Graph = {
+  def buildDAG(start: Dependency[_]): Graph = {
 
-    var explored : Set[Dependency[_]] = Set()
-    var toExplore : Set[Dependency[_]] = Set(start)
+    var explored: Set[Dependency[_]] = Set()
+    var toExplore: Set[Dependency[_]] = Set(start)
 
-    while(toExplore.nonEmpty){
+    while (toExplore.nonEmpty) {
       val x = toExplore.head
       val goodneighbors = (x.parents ++ x.children).toSet -- explored
       toExplore = toExplore ++ goodneighbors

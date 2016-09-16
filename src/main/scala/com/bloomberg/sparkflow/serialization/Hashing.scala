@@ -2,8 +2,8 @@ package com.bloomberg.sparkflow.serialization
 
 import java.security.MessageDigest
 
+import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassReader, getClassesAndSerializedFields}
 import com.google.common.io.BaseEncoding
-import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassesAndSerializedFields, getClassReader}
 
 
 /**
@@ -28,6 +28,7 @@ private[sparkflow] object Hashing {
     hashClass(f)
   }
 
+  //TODO: fix hashing on case statement functions
   def hashClass(obj: AnyRef) = {
 
     val (allDepedendentClasses, serializedFields) = getClassesAndSerializedFields(obj)

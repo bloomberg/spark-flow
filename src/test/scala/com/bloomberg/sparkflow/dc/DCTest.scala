@@ -1,6 +1,8 @@
 package com.bloomberg.sparkflow.dc
 
 import com.holdenkarau.spark.testing.SharedSparkContext
+import org.apache.spark.sql.types.{StructField, DataTypes, IntegerType, StructType}
+import org.apache.spark.sql.{Row, SQLContext, DataFrame, Dataset}
 import org.scalatest._
 import com.bloomberg.sparkflow._
 
@@ -24,9 +26,7 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
     val filtered = numbers.filter(_ < 3).checkpoint()
     val doubled = filtered.map(_ * 2)
 
-
-    val rdd = doubled.getRDD(sc)
-    rdd.foreach(println)
+    Seq(2,4) should contain theSameElementsAs doubled.getRDD(sc).collect()
   }
 
   test("sample"){
@@ -182,7 +182,7 @@ class DCTest extends FunSuite with SharedSparkContext with ShouldMatchers{
   }
 
 //  Actions
-
+//
   test("collect"){
     val input = parallelize(1 to 5)
     val result = input.collect

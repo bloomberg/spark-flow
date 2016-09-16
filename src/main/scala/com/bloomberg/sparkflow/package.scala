@@ -1,16 +1,13 @@
 package com.bloomberg
 
+import com.bloomberg.sparkflow.dc.{DC, ParallelCollectionDC, SourceDC}
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.DenseVector
-import org.apache.spark.mllib.linalg.SparseVector
-import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib.linalg.{DenseVector, SparseVector, Vector}
+import org.apache.spark.sql.EncoderUtil.encoderFor
 import org.apache.spark.sql._
-import com.bloomberg.sparkflow.dc.{SourceDC, ParallelCollectionDC, DC}
-
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.storage.StorageLevel
-
-import scala.reflect.ClassTag
-
 
 import scala.language.implicitConversions
 
@@ -19,17 +16,17 @@ import scala.language.implicitConversions
   */
 package object sparkflow extends SQLImplicits {
 
-  private[sparkflow] def setSession(spark: SparkSession): Unit ={
+  private[sparkflow] def setSession(spark: SparkSession): Unit = {
     _spark = spark
     sqlContext = SQLContext.getOrCreate(spark.sparkContext)
   }
 
-  private[sparkflow] def setSession(sc: SparkContext): Unit ={
+  private[sparkflow] def setSession(sc: SparkContext): Unit = {
     val spark = SparkSession.builder().config(sc.getConf).getOrCreate()
     setSession(spark)
   }
 
-  private[sparkflow] def getSpark(sc: SparkContext): SparkSession ={
+  private[sparkflow] def getSpark(sc: SparkContext): SparkSession = {
     synchronized {
       setSession(sc)
       spark
@@ -40,49 +37,69 @@ package object sparkflow extends SQLImplicits {
   private var sqlContext: SQLContext = null
 
   protected override def _sqlContext: SQLContext = sqlContext
+
   private def spark: SparkSession = _spark
 
-  implicit val rowEncoder = org.apache.spark.sql.Encoders.kryo[Row]
-  implicit val denseVectorEncoder = org.apache.spark.sql.Encoders.kryo[DenseVector]
-  implicit val sparseVectorEncoder = org.apache.spark.sql.Encoders.kryo[SparseVector]
-  implicit val vectorEncoder = org.apache.spark.sql.Encoders.kryo[Vector]
+  implicit def denseVectorEncoder = org.apache.spark.sql.Encoders.kryo[DenseVector]
 
-  def read(implicit rowEncoder: Encoder[Row]) = new DCDataFrameReader
+  implicit def sparseVectorEncoder = org.apache.spark.sql.Encoders.kryo[SparseVector]
 
-  def parallelize[T:ClassTag](seq: Seq[T])(implicit tEncoder: Encoder[T]): DC[T] = {
-    new ParallelCollectionDC(seq)
+  implicit def vectorEncoder = org.apache.spark.sql.Encoders.kryo[Vector]
+
+  private[sparkflow] val emptyRowEncoder = RowEncoder(new StructType())
+
+  def read = new DCDataFrameReader
+
+  def parallelize[T: Encoder](seq: Seq[T]): DC[T] = {
+    val encoder = encoderFor[T]
+    new ParallelCollectionDC(encoder, seq, None)
   }
 
-  def parallelize[T:ClassTag](seq: Seq[T], numSlices: Int)(implicit tEncoder: Encoder[T]): DC[T] = {
-    new ParallelCollectionDC(seq, Some(numSlices))
+  def parallelize[T: Encoder](seq: Seq[T], numSlices: Int): DC[T] = {
+    val encoder = encoderFor[T]
+    new ParallelCollectionDC(encoder, seq, Some(numSlices))
   }
 
   def textFile(path: String) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path)
-    new SourceDC[String](path, sourceFunc, "textFile")
+    new SourceDC[String](encoderFor[String], path, sourceFunc, "textFile")
   }
 
   def textFile(path: String,
                minPartitions: Int) = {
     val sourceFunc = (sc: SparkContext) => sc.textFile(path, minPartitions)
-    new SourceDC[String](path, sourceFunc, "textFile")
+    new SourceDC[String](encoderFor[String], path, sourceFunc, "textFile")
   }
 
-  def objectFile[T:ClassTag](path: String)(implicit tEncoder: Encoder[T]) = {
+  def objectFile[T: Encoder](path: String) = {
+    implicit val tClassTag = encoderFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path)
-    new SourceDC[T](path, sourceFunc, "objectFile")
+    new SourceDC[T](encoderFor[T], path, sourceFunc, "objectFile")
   }
 
-  def objectFile[T:ClassTag](path: String,
-                             minPartitions: Int)(implicit tEncoder: Encoder[T]) = {
+  def objectFile[T: Encoder](path: String,
+                             minPartitions: Int) = {
+    implicit val tClassTag = encoderFor[T].clsTag
     val sourceFunc = (sc: SparkContext) => sc.objectFile[T](path, minPartitions)
-    new SourceDC[T](path, sourceFunc, "objectFile")
+    new SourceDC[T](encoderFor[T], path, sourceFunc, "objectFile")
   }
 
   private[sparkflow] var checkpointDir = "/tmp/sparkflow"
-  def setCheckpointDir(s: String) = {checkpointDir = s}
+
+  def setCheckpointDir(s: String) = {
+    checkpointDir = s
+  }
 
   private[sparkflow] var defaultPersistence = StorageLevel.MEMORY_AND_DISK
-  def setPersistence(storageLevel: StorageLevel) = {defaultPersistence = storageLevel}
+
+  def setPersistence(storageLevel: StorageLevel) = {
+    defaultPersistence = storageLevel
+  }
+
+  private[sparkflow] var autoCachingEnabled = true
+
+  def setAutoCaching(enabled: Boolean) = {
+    autoCachingEnabled = enabled
+  }
 
 }

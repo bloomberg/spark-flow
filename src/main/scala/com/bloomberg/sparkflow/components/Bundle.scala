@@ -12,7 +12,7 @@ trait Bundle {
   lazy val elements = calcElements()
 
   protected def calcElements() = {
-    val c      = getClass
+    val c = getClass
     val res = c.getMethods.map { m =>
       val name = m.getName
       val modifiers = m.getModifiers
@@ -21,10 +21,10 @@ trait Bundle {
       val isPD = classOf[DC[_]].isAssignableFrom(m.getReturnType)
       if (types.isEmpty && !java.lang.reflect.Modifier.isStatic(modifiers)
         && isPD) {
-      m invoke this match {
-        case pd: DC[_] => Some((name, pd))
-        case _ => None
-      }
+        m invoke this match {
+          case pd: DC[_] => Some((name, pd))
+          case _ => None
+        }
       } else {
         None
       }
@@ -35,7 +35,7 @@ trait Bundle {
 
 
   def getStuff(): List[Map[String, Any]] = {
-    val c      = getClass
+    val c = getClass
     val res = c.getMethods.map { m =>
 
       val map = Map(
@@ -63,12 +63,14 @@ trait Bundle {
     res
   }
 
-  def printStuff() ={
+  def printStuff() = {
     val stuff = getStuff().filter(filterMaps)
 
     val filterFunc = (m: Map[String, Any]) => m.get("name") == Some("anInt") || m.get("name") == Some("nums")
-    val stuffIWant = stuff.filter{filterFunc}
-    val stuffIDontWant = stuff.filter{m => !filterFunc(m)}
+    val stuffIWant = stuff.filter {
+      filterFunc
+    }
+    val stuffIDontWant = stuff.filter { m => !filterFunc(m) }
 
     stuffIWant.foreach { map =>
       println("-" * 40)

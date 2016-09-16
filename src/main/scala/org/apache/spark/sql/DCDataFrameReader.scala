@@ -2,14 +2,14 @@ package org.apache.spark.sql
 
 import java.util.Properties
 
-import com.bloomberg.sparkflow.dc.{DataframeSourceDC, DC}
+import com.bloomberg.sparkflow.dc.{DC, DataframeSourceDC}
 import org.apache.hadoop.util.StringUtils
 import org.apache.spark.sql.types.StructType
 
 /**
   * Created by ngoehausen on 4/26/16.
   */
-class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
+class DCDataFrameReader {
   /**
     * Specifies the input data source format.
     *
@@ -127,13 +127,13 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     * Don't create too many partitions in parallel on a large cluster; otherwise Spark might crash
     * your external database systems.
     *
-    * @param url JDBC database url of the form `jdbc:subprotocol:subname`
-    * @param table Name of the table in the external database.
-    * @param columnName the name of a column of integral type that will be used for partitioning.
-    * @param lowerBound the minimum value of `columnName` used to decide partition stride
-    * @param upperBound the maximum value of `columnName` used to decide partition stride
-    * @param numPartitions the number of partitions.  the range `minValue`-`maxValue` will be split
-    *                      evenly into this many partitions
+    * @param url                  JDBC database url of the form `jdbc:subprotocol:subname`
+    * @param table                Name of the table in the external database.
+    * @param columnName           the name of a column of integral type that will be used for partitioning.
+    * @param lowerBound           the minimum value of `columnName` used to decide partition stride
+    * @param upperBound           the maximum value of `columnName` used to decide partition stride
+    * @param numPartitions        the number of partitions.  the range `minValue`-`maxValue` will be split
+    *                             evenly into this many partitions
     * @param connectionProperties JDBC database connection arguments, a list of arbitrary string
     *                             tag/value. Normally at least a "user" and "password" property
     *                             should be included.
@@ -162,9 +162,9 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     * Don't create too many partitions in parallel on a large cluster; otherwise Spark might crash
     * your external database systems.
     *
-    * @param url JDBC database url of the form `jdbc:subprotocol:subname`
-    * @param table Name of the table in the external database.
-    * @param predicates Condition in the where clause for each partition.
+    * @param url                  JDBC database url of the form `jdbc:subprotocol:subname`
+    * @param table                Name of the table in the external database.
+    * @param predicates           Condition in the where clause for each partition.
     * @param connectionProperties JDBC database connection arguments, a list of arbitrary string
     *                             tag/value. Normally at least a "user" and "password" property
     *                             should be included.
@@ -219,43 +219,43 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     *
     * @since 1.6.0
     */
-  def json(paths: String*): DC[Row] = format("json").load(paths : _*)
+  def json(paths: String*): DC[Row] = format("json").load(paths: _*)
 
-//  /**
-//    * Loads an `JavaRDD[String]` storing JSON objects (one object per record) and
-//    * returns the result as a [[DataFrame]].
-//    *
-//    * Unless the schema is specified using [[schema]] function, this function goes through the
-//    * input once to determine the input schema.
-//    *
-//    * @param jsonRDD input RDD with one JSON object per record
-//    * @since 1.4.0
-//    */
-//  def json(jsonRDD: JavaRDD[String]): DC[Row] = json(jsonRDD.rdd)
-//
-//  /**
-//    * Loads an `RDD[String]` storing JSON objects (one object per record) and
-//    * returns the result as a [[DataFrame]].
-//    *
-//    * Unless the schema is specified using [[schema]] function, this function goes through the
-//    * input once to determine the input schema.
-//    *
-//    * @param jsonRDD input RDD with one JSON object per record
-//    * @since 1.4.0
-//    */
-//  def json(jsonRDD: RDD[String]): DC[Row] = {
-//    val f = (sqlContext: SQLContext) => {
-//      sqlContext.baseRelationToDataFrame(
-//        new JSONRelation(
-//          Some(jsonRDD),
-//          maybeDataSchema = userSpecifiedSchema,
-//          maybePartitionSpec = None,
-//          userDefinedPartitionColumns = None,
-//          parameters = extraOptions.toMap)(sqlContext)
-//      )
-//    }
-//    new DataframeSourceDC(f, extraOptions("path"))
-//  }
+  //  /**
+  //    * Loads an `JavaRDD[String]` storing JSON objects (one object per record) and
+  //    * returns the result as a [[DataFrame]].
+  //    *
+  //    * Unless the schema is specified using [[schema]] function, this function goes through the
+  //    * input once to determine the input schema.
+  //    *
+  //    * @param jsonRDD input RDD with one JSON object per record
+  //    * @since 1.4.0
+  //    */
+  //  def json(jsonRDD: JavaRDD[String]): DC[Row] = json(jsonRDD.rdd)
+  //
+  //  /**
+  //    * Loads an `RDD[String]` storing JSON objects (one object per record) and
+  //    * returns the result as a [[DataFrame]].
+  //    *
+  //    * Unless the schema is specified using [[schema]] function, this function goes through the
+  //    * input once to determine the input schema.
+  //    *
+  //    * @param jsonRDD input RDD with one JSON object per record
+  //    * @since 1.4.0
+  //    */
+  //  def json(jsonRDD: RDD[String]): DC[Row] = {
+  //    val f = (sqlContext: SQLContext) => {
+  //      sqlContext.baseRelationToDataFrame(
+  //        new JSONRelation(
+  //          Some(jsonRDD),
+  //          maybeDataSchema = userSpecifiedSchema,
+  //          maybePartitionSpec = None,
+  //          userDefinedPartitionColumns = None,
+  //          parameters = extraOptions.toMap)(sqlContext)
+  //      )
+  //    }
+  //    new DataframeSourceDC(f, extraOptions("path"))
+  //  }
 
   /**
     * Loads a Parquet file, returning the result as a [[DataFrame]]. This function returns an empty
@@ -266,7 +266,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
   @scala.annotation.varargs
   def parquet(paths: String*): DC[Row] = {
     val f = (sparkSession: SparkSession) => {
-      sparkSession.read.parquet(paths:_*)
+      sparkSession.read.parquet(paths: _*)
     }
     new DataframeSourceDC(f, paths.mkString(";"), extraOptions.toMap)
   }
@@ -308,7 +308,7 @@ class DCDataFrameReader(implicit rowEncoder: Encoder[Row]) {
     * @since 1.6.0
     */
   @scala.annotation.varargs
-  def text(paths: String*): DC[Row] = format("text").load(paths : _*)
+  def text(paths: String*): DC[Row] = format("text").load(paths: _*)
 
   private var sourceOpt: Option[String] = None
 

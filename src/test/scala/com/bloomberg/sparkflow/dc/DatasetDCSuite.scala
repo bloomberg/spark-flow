@@ -13,9 +13,6 @@ class DatasetDCSuite extends FunSuite with SharedSparkContext with ShouldMatcher
 
     parallelize(1 to 3).map(x => (x, Seq(x))).getRDD(sc).foreach(println)
 
-
-
-
   }
 
 }

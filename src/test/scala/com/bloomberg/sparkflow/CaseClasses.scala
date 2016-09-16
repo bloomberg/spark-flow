@@ -6,5 +6,6 @@ package com.bloomberg.sparkflow
 object CaseClasses extends Serializable {
 
   case class TrashFire(temp: Double, mass: Double)
+  case class Stuff(provider_urls: Array[String])
 
 }

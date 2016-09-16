@@ -1,24 +1,19 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.{SparkSession, Encoder}
+import org.apache.spark.sql.{Encoder, SparkSession}
 
-import scala.reflect.ClassTag
 
-import com.bloomberg.sparkflow._
 /**
   * Created by ngoehausen on 2/29/16.
   */
-private[sparkflow] class ParallelCollectionDC[T:ClassTag](val data: Seq[T], numSlices: Option[Int])(implicit tEncoder: Encoder[T]) extends DC[T](Nil) {
-
-  def this(data: Seq[T])(implicit tEncoder: Encoder[T]) = this(data, None)
+private[sparkflow] class ParallelCollectionDC[T](encoder: Encoder[T], val data: Seq[T], numSlices: Option[Int]) extends DC[T](encoder, Nil) {
 
 
   def computeDataset(spark: SparkSession) = {
     numSlices match {
-      case Some(n) => spark.sparkContext.parallelize(data, n).toDS()
-      case None => spark.sparkContext.parallelize(data).toDS()
+      case Some(n) => spark.createDataset(data).repartition(n)
+      case None => spark.createDataset(data)
     }
   }
 

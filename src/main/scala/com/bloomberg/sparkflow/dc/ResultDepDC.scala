@@ -1,17 +1,14 @@
 package com.bloomberg.sparkflow.dc
 
 import com.bloomberg.sparkflow.serialization.Hashing
-import org.apache.spark.SparkContext
-import Hashing._
-import org.apache.spark.sql.{SparkSession, Encoder}
-
-import scala.reflect.ClassTag
+import com.bloomberg.sparkflow.serialization.Hashing._
+import org.apache.spark.sql.{Encoder, SparkSession}
 
 /**
   * ResultDependentDistributedCollection
   */
-class ResultDepDC[U:ClassTag, T:ClassTag]
-(val prev: DC[T], dr: DR[U])(implicit tuEncoder: Encoder[(T,U)]) extends DC[(T,U)](Seq(prev, dr)) {
+class ResultDepDC[U, T]
+(encoder: Encoder[(T, U)], val prev: DC[T], dr: DR[U]) extends DC[(T, U)](encoder, Seq(prev, dr)) {
 
   override def computeDataset(spark: SparkSession) = {
     val result = dr.get(spark)
