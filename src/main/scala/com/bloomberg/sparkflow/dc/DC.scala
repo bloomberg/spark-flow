@@ -289,25 +289,25 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new Column(colName)
   }
 
-  def join(right: DC[Row]): DC[Row] = {
-    val f = (left: Dataset[_], right: Dataset[_]) => {
-      left.join(right)
-    }
-    val hashTarget = Seq("join")
-    new MultiDatasetTransformDC(this, right, f, hashTarget)
-  }
+//  def join(right: DC[Row]): DC[Row] = {
+//    val f = (left: Dataset[_], right: Dataset[_]) => {
+//      left.join(right)
+//    }
+//    val hashTarget = Seq("join")
+//    new MultiDatasetTransformDC(this, right, f, hashTarget)
+//  }
 
-  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
-
-  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
-
-  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
-    val f = (left: Dataset[_], right: Dataset[_]) => {
-      left.join(right, joinExprs, joinType)
-    }
-    val hashTarget = Seq("join", joinType, joinExprs.toString())
-    new MultiDatasetTransformDC(this, right, f, hashTarget)
-  }
+//  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
+//
+//  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
+//
+//  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
+//    val f = (left: Dataset[_], right: Dataset[_]) => {
+//      left.join(right, joinExprs, joinType)
+//    }
+//    val hashTarget = Seq("join", joinType, joinExprs.toString())
+//    new MultiDatasetTransformDC(this, right, f, hashTarget)
+//  }
 
 
   def getRDD(spark: SparkSession): RDD[T] = {
