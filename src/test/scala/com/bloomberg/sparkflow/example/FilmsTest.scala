@@ -18,5 +18,7 @@ class FilmsTest extends FunSuite with SharedSparkContext  {
     filmPipe.filmRows.getDF(sc).show()
 
     filmPipe.topActors.get(sc).foreach(println)
+    filmPipe.filmsWithTopActors.getDataset(sc).show()
+    println(filmPipe.filmsWithTopActors.count.get(sc))
   }
 }
