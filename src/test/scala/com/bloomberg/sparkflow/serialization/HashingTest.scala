@@ -16,11 +16,9 @@
 
 package com.bloomberg.sparkflow.serialization
 
-import org.apache.spark.hax.MyClosureCleaner
 import org.scalatest.FunSuite
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.serialization.Hashing._
-import org.apache.spark.hax.SerializeUtil.clean
 
 /**
   * Created by ngoehausen on 3/23/16.
