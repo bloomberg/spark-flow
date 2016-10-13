@@ -51,11 +51,11 @@ class HashingTest extends FunSuite {
     val doubled = filtered.map(_ * 2)
     val after = doubled.map(SomeFunctions.func4)
 
-    println(numbers.getSignature)
-    println(filtered.getSignature)
-    println(doubled.getSignature)
-    println(after.getSignature)
+    val allSignatures = Set(numbers.getSignature,
+      filtered.getSignature,
+      doubled.getSignature,
+      after.getSignature)
 
-
+    assert(allSignatures.size == 4)
   }
 }

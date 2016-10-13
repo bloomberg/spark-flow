@@ -27,8 +27,10 @@ class DatasetDCSuite extends FunSuite with SharedSparkContext with ShouldMatcher
 
   test("encoders"){
 
-    parallelize(1 to 3).map(x => (x, Seq(x))).getRDD(sc).foreach(println)
-
+    val dc = parallelize(1 to 3).map(x => (x, Seq(x)))
+    val rdd = dc.getRDD(sc)
+    val expected = (1 to 3).map(x => (x, Seq(x)))
+    rdd.collect() should contain theSameElementsAs expected
   }
 
 }

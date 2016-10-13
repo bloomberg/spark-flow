@@ -37,7 +37,7 @@ class DRTest extends FunSuite with SharedSparkContext with ShouldMatchers {
     val normalized: DC[Double] = doubles.withResult(sum).map{case (number, s) => number / s}
 
     val normalizedRDD = normalized.getRDD(sc)
-    normalizedRDD.foreach(println)
+    assert(normalizedRDD.collect().nonEmpty)
   }
 
 

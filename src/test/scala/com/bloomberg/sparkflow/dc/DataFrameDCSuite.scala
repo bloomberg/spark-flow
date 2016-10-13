@@ -46,7 +46,7 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 
     assert(make.getSignature != makeModel.getSignature)
 
-    make.getDF(sc).collect().foreach(println)
+    assert(make.getDF(sc).collect().nonEmpty)
   }
 
   test("json"){
@@ -54,14 +54,10 @@ class DataFrameDCSuite extends FunSuite with SharedSparkContext with ShouldMatch
 
     val dc = read.json(testFile(path)).repartition(10)
 
-    dc.getDF(sc).show()
-
     val providerURLS = dc.select("provider_urls").checkpoint()
 
-    providerURLS.getDF(sc).columns.foreach(println)
+    assert(providerURLS.getDF(sc).columns.head == "provider_urls")
 
-    providerURLS.getDF(sc).show()
-    println(dc.getRDD(sc).first())
   }
 
   test("union"){
