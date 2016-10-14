@@ -38,7 +38,7 @@ package object sparkflow extends SQLImplicits {
   }
 
   private[sparkflow] def setSession(sc: SparkContext): Unit = {
-    val spark = SparkSession.builder().config(sc.getConf).getOrCreate()
+    val spark = SparkSession.builder().getOrCreate()
     setSession(spark)
   }
 
