@@ -21,6 +21,7 @@ import java.io.File
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.dc.Util._
+import com.bloomberg.sparkflow.internal.Logging
 import com.bloomberg.sparkflow.serialization.Hashing._
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.rdd.RDDFunctions._
@@ -36,7 +37,7 @@ import scala.reflect.ClassTag
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Dependency[T](deps) {
+abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Dependency[T](deps) with Logging {
 
   private var dataset: Dataset[T] = _
   private var checkpointed = false
