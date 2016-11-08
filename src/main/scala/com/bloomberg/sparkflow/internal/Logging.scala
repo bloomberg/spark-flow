@@ -16,11 +16,10 @@
 
 package com.bloomberg.sparkflow.internal
 
-import org.apache.log4j.{Level, LogManager, PropertyConfigurator}
-import org.slf4j.{Logger, LoggerFactory}
-import org.slf4j.impl.StaticLoggerBinder
-
 import com.bloomberg.sparkflow.util.Utils
+import org.apache.log4j.{Level, LogManager, PropertyConfigurator}
+import org.slf4j.impl.StaticLoggerBinder
+import org.slf4j.{Logger, LoggerFactory}
 
 private[sparkflow] trait Logging {
 
@@ -110,7 +109,7 @@ private[sparkflow] trait Logging {
     if (usingLog4j12) {
       val log4j12Initialized = LogManager.getRootLogger.getAllAppenders.hasMoreElements
       // scalastyle:off println
-      if (!log4j12Initialized) {
+//      if (!log4j12Initialized) {
         val defaultLogProps = "com/bloomberg/sparkflow/log4j-defaults.properties"
         Option(Utils.getSparkClassLoader.getResource(defaultLogProps)) match {
           case Some(url) =>
@@ -119,14 +118,14 @@ private[sparkflow] trait Logging {
           case None =>
             System.err.println(s"Spark was unable to load $defaultLogProps")
         }
-      }
+//      }
 
       if (isInterpreter) {
         // Use the repl's main class to define the default log level when running the shell,
         // overriding the root logger's config if they're different.
         val rootLogger = LogManager.getRootLogger()
         val replLogger = LogManager.getLogger(logName)
-        val replLevel = Option(replLogger.getLevel()).getOrElse(Level.WARN)
+        val replLevel = Option(replLogger.getLevel()).getOrElse(Level.DEBUG)
         if (replLevel != rootLogger.getEffectiveLevel()) {
           System.err.printf("Setting default log level to \"%s\".\n", replLevel)
           System.err.println("To adjust logging level use sc.setLogLevel(newLevel). " +
@@ -150,12 +149,12 @@ private object Logging {
   try {
     // We use reflection here to handle the case where users remove the
     // slf4j-to-jul bridge order to route their logs to JUL.
-//    val bridgeClass = Utils.classForName("org.slf4j.bridge.SLF4JBridgeHandler")
-//    bridgeClass.getMethod("removeHandlersForRootLogger").invoke(null)
-//    val installed = bridgeClass.getMethod("isInstalled").invoke(null).asInstanceOf[Boolean]
-//    if (!installed) {
-//      bridgeClass.getMethod("install").invoke(null)
-//    }
+    val bridgeClass = Utils.classForName("org.slf4j.bridge.SLF4JBridgeHandler")
+    bridgeClass.getMethod("removeHandlersForRootLogger").invoke(null)
+    val installed = bridgeClass.getMethod("isInstalled").invoke(null).asInstanceOf[Boolean]
+    if (!installed) {
+      bridgeClass.getMethod("install").invoke(null)
+    }
   } catch {
     case e: ClassNotFoundException => // can't log anything yet so just fail silently
   }

@@ -22,10 +22,12 @@ import org.objectweb.asm._
 import scala.reflect.runtime.{universe => ru}
 import scala.util.Try
 
+import com.bloomberg.sparkflow.internal.Logging
+
 /**
   * Created by ngoehausen on 4/11/16.
   */
-object ClassExploration {
+object ClassExploration extends Logging {
 
   val mirror = ru.runtimeMirror(getClass.getClassLoader)
   val APPLYMC2 = "apply$mcII$sp"

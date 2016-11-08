@@ -17,8 +17,6 @@
 package com.bloomberg.sparkflow.util
 
 import com.bloomberg.sparkflow.internal.Logging
-//import org.apache.spark.util.Utils._
-
 
 private[sparkflow] object Utils extends Logging {
 
@@ -26,5 +24,27 @@ private[sparkflow] object Utils extends Logging {
     * Get the ClassLoader which loaded Spark.
     */
   def getSparkClassLoader: ClassLoader = getClass.getClassLoader
+
+  /**
+    * Get the Context ClassLoader on this thread or, if not present, the ClassLoader that
+    * loaded Spark.
+    *
+    * This should be used whenever passing a ClassLoader to Class.ForName or finding the currently
+    * active loader when setting up ClassLoader delegation chains.
+    */
+  def getContextOrSparkClassLoader: ClassLoader =
+    Option(Thread.currentThread().getContextClassLoader).getOrElse(getSparkClassLoader)
+
+
+  // scalastyle:off classforname
+  /** Preferred alternative to Class.forName(className) */
+  def classForName(className: String): Class[_] = {
+    Class.forName(className, true, getContextOrSparkClassLoader)
+    // scalastyle:on classforname
+  }
+
+  def setLogLevel(l: org.apache.log4j.Level) {
+    org.apache.log4j.Logger.getRootLogger().setLevel(l)
+  }
 
 }
