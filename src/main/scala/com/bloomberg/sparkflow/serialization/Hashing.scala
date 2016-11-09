@@ -35,8 +35,9 @@ private[sparkflow] object Hashing extends Logging {
   }
 
   def hashString(s: String) = {
-    logWarning("string \"" + s + "\" hashed to \"" + hashBytes(s.getBytes()) + "\"")
-    hashBytes(s.getBytes())
+    val bytes = hashBytes(s.getBytes())
+    logDebug("string \"" + s + "\" hashed to \"" + bytes + "\"")
+    bytes
   }
 
   def hashSeq[T](seq: Seq[T]) = {

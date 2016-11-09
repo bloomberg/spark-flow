@@ -16,14 +16,16 @@
 
 package com.bloomberg.sparkflow.serialization
 
-import org.scalatest.FunSuite
+import org.scalatest._
 import com.bloomberg.sparkflow._
+import com.bloomberg.sparkflow.dc.DC
 import com.bloomberg.sparkflow.serialization.Hashing._
+import com.holdenkarau.spark.testing.SharedSparkContext
 
 /**
   * Created by ngoehausen on 3/23/16.
   */
-class HashingTest extends FunSuite {
+class HashingTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
   test("functionHashing"){
     var param = 7
@@ -58,4 +60,29 @@ class HashingTest extends FunSuite {
 
     assert(allSignatures.size == 4)
   }
+
+  test("caseHashing"){
+    setLogLevel("DEBUG")
+    val numbers: DC[Int] = parallelize(1 to 10)
+
+    var multiplier = 10
+    val result1 = numbers.map({case x: Int if x % 3 == 0 => x * multiplier
+                               case x: Int => x})
+
+    Seq(1,2,30,4,5,60,7,8,90,10) should contain theSameElementsAs result1.getRDD(sc).collect()
+
+
+    multiplier = 20
+    val result2 = numbers.map({case x: Int if x % 3 == 0 => x * multiplier
+                               case x: Int => x})
+
+    Seq(1,2,60,4,5,120,7,8,180,10) should contain theSameElementsAs result2.getRDD(sc).collect()
+
+    //var nest = (a: Int, b: Int) => (a, b * 2)
+    //val result1 = input.map({case (a,b) => (a, multiply(b))})
+    //val result2 = input.map{case (x: Int, y: Int) => nest}
+  }
 }
+
+
+

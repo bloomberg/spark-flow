@@ -36,15 +36,16 @@ private[sparkflow] object Utils extends Logging {
     Option(Thread.currentThread().getContextClassLoader).getOrElse(getSparkClassLoader)
 
 
-  // scalastyle:off classforname
   /** Preferred alternative to Class.forName(className) */
   def classForName(className: String): Class[_] = {
     Class.forName(className, true, getContextOrSparkClassLoader)
-    // scalastyle:on classforname
   }
 
   def setLogLevel(l: org.apache.log4j.Level) {
-    org.apache.log4j.Logger.getRootLogger().setLevel(l)
+    val logger = org.apache.log4j.Logger.getLogger("com.bloomberg.sparkflow")
+    logInfo("Changing spark-flow's log level from " + logger.getLevel + " to " + l)
+
+    logger.setLevel(l)
   }
 
 }

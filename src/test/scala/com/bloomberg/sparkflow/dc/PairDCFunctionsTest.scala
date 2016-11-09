@@ -124,6 +124,7 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     result.getRDD(sc).partitions.size shouldEqual 2
   }
 
+  /*
   test("join"){
     val left = parallelize(Seq((1,1), (1,2), (2,3), (2,4)))
     val right = parallelize(Seq((1,"a"), (2,"b")))
@@ -142,6 +143,7 @@ class PairDCFunctionsTest extends FunSuite with SharedSparkContext with ShouldMa
     expected should contain theSameElementsAs result.getRDD(sc).collect()
     result.getRDD(sc).partitions.size shouldEqual 2
   }
+  */
 
   test("leftOuterJoin"){
     val left = parallelize(Seq((1,1), (1,2), (2,3)))

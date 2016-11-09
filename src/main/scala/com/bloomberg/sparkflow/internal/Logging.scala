@@ -84,6 +84,7 @@ private[sparkflow] trait Logging {
     if (log.isErrorEnabled) log.error(msg, throwable)
   }
 
+
   protected def isTraceEnabled(): Boolean = {
     log.isTraceEnabled
   }
@@ -108,17 +109,14 @@ private[sparkflow] trait Logging {
     val usingLog4j12 = "org.slf4j.impl.Log4jLoggerFactory".equals(binderClass)
     if (usingLog4j12) {
       val log4j12Initialized = LogManager.getRootLogger.getAllAppenders.hasMoreElements
-      // scalastyle:off println
-//      if (!log4j12Initialized) {
-        val defaultLogProps = "com/bloomberg/sparkflow/log4j-defaults.properties"
-        Option(Utils.getSparkClassLoader.getResource(defaultLogProps)) match {
-          case Some(url) =>
-            PropertyConfigurator.configure(url)
-            System.err.println(s"Using Spark's default log4j profile: $defaultLogProps")
-          case None =>
-            System.err.println(s"Spark was unable to load $defaultLogProps")
-        }
-//      }
+      val defaultLogProps = "com/bloomberg/sparkflow/log4j-defaults.properties"
+      Option(Utils.getSparkClassLoader.getResource(defaultLogProps)) match {
+        case Some(url) =>
+          PropertyConfigurator.configure(url)
+          System.err.println(s"Using spark-flow's default log4j profile: $defaultLogProps")
+        case None =>
+          System.err.println(s"Spark-flow was unable to load $defaultLogProps")
+      }
 
       if (isInterpreter) {
         // Use the repl's main class to define the default log level when running the shell,
@@ -133,7 +131,6 @@ private[sparkflow] trait Logging {
           rootLogger.setLevel(replLevel)
         }
       }
-      // scalastyle:on println
     }
     Logging.initialized = true
 

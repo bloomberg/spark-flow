@@ -177,7 +177,7 @@ object ClassExploration extends Logging {
                               desc: String,
                               sig: String,
                               exceptions: Array[String]): MethodVisitor = {
-      //      println(s"Class visitMethod: name: $name, desc: $desc")
+      //logWarning(s"Class visitMethod: name: $name, desc: $desc")
       if (name == methodName) {
         new MethodExplorer(ownerNames)
       } else {
