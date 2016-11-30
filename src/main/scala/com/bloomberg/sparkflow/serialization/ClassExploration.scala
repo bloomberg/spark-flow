@@ -75,7 +75,6 @@ object ClassExploration extends Logging {
 
   def getFieldObjects(func: AnyRef): Set[AnyRef] = {
     val cls = func.getClass
-    println("cls: " + cls)
 
     val fields = cls.getDeclaredFields
 
@@ -88,25 +87,6 @@ object ClassExploration extends Logging {
 
     nestedObjects.toSet
   }
-
-//  def getMethodObjects(func: AnyRef): Set[AnyRef] = {
-//    val cls = func.getClass
-//
-//    val methods = cls.getDeclaredMethods
-//
-//    println(methods.size)
-//    methods.map(x => x.toGenericString).foreach(println)
-//    methods.map(m => m.getDeclaringClass).foreach(println)
-//    methods.map(m => m.getName).foreach(println)
-//
-//    methods.map(m => m.toString).foreach(println)
-//
-//
-//    val methodsUsed = getMethodsUsed(func)
-//    println(methodsUsed.size)
-//      methodsUsed.foreach(println)
-//    methods.toSet
-//  }
 
   def shouldExplore(clz: Class[_]): Boolean = {
     val name = clz.getName
