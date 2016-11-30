@@ -63,9 +63,7 @@ class HashingTest extends FunSuite with SharedSparkContext with ShouldMatchers{
   }
 
   test("caseHashing"){
-    setLogLevel("DEBUG")
-    println(s"fieldObjects: ${getFieldObjects(HashingSample.result)}")
-    println(s"result: ${HashingSample.result.getSignature}")
+    assert(HashingSample.result.getSignature == "B32D1AC52064390DC6BFCEBF086B8D61")
   }
 
 
