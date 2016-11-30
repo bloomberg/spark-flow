@@ -30,23 +30,7 @@ import com.bloomberg.sparkflow.internal.Logging
 object ClassExploration extends Logging {
 
   val mirror = ru.runtimeMirror(getClass.getClassLoader)
-  val APPLYS = Set("apply$mcB$sp", "apply$mcC$sp", "apply$mcD$sp", "apply$mcF$sp", "apply$mcI$sp", "apply$mcJ$sp",
-                   "apply$mcS$sp", "apply$mcV$sp", "apply$mcZ$sp", "apply$mcDD$sp", "apply$mcDF$sp", "apply$mcDI$sp",
-                   "apply$mcDJ$sp", "apply$mcFD$sp", "apply$mcFF$sp", "apply$mcFI$sp", "apply$mcFJ$sp", "apply$mcID$sp",
-                   "apply$mcIF$sp", "apply$mcII$sp", "apply$mcIJ$sp", "apply$mcJD$sp", "apply$mcJF$sp", "apply$mcJI$sp",
-                   "apply$mcJJ$sp", "apply$mcVD$sp", "apply$mcVF$sp", "apply$mcVI$sp", "apply$mcVJ$sp", "apply$mcZD$sp",
-                   "apply$mcZF$sp", "apply$mcZI$sp", "apply$mcZJ$sp", "apply$mcDDD$sp", "apply$mcDDI$sp",
-                   "apply$mcDDJ$sp", "apply$mcDID$sp", "apply$mcDII$sp", "apply$mcDIJ$sp", "apply$mcDJD$sp",
-                   "apply$mcDJI$sp", "apply$mcDJJ$sp", "apply$mcFDD$sp", "apply$mcFDI$sp", "apply$mcFDJ$sp",
-                   "apply$mcFID$sp", "apply$mcFII$sp", "apply$mcFIJ$sp", "apply$mcFJD$sp", "apply$mcFJI$sp",
-                   "apply$mcFJJ$sp", "apply$mcIDD$sp", "apply$mcIDI$sp", "apply$mcIDJ$sp", "apply$mcIID$sp",
-                   "apply$mcIII$sp", "apply$mcIIJ$sp", "apply$mcIJD$sp", "apply$mcIJI$sp", "apply$mcIJJ$sp",
-                   "apply$mcJDD$sp", "apply$mcJDI$sp", "apply$mcJDJ$sp", "apply$mcJID$sp", "apply$mcJII$sp",
-                   "apply$mcJIJ$sp", "apply$mcJJD$sp", "apply$mcJJI$sp", "apply$mcJJJ$sp", "apply$mcVDD$sp",
-                   "apply$mcVDI$sp", "apply$mcVDJ$sp", "apply$mcVID$sp", "apply$mcVII$sp", "apply$mcVIJ$sp",
-                   "apply$mcVJD$sp", "apply$mcVJI$sp", "apply$mcVJJ$sp", "apply$mcZDD$sp", "apply$mcZDI$sp",
-                   "apply$mcZDJ$sp", "apply$mcZID$sp", "apply$mcZII$sp", "apply$mcZIJ$sp", "apply$mcZJD$sp",
-                   "apply$mcZJI$sp", "apply$mcZJJ$sp")
+  val EXCLUDED_NAMES: Set[String] = Set("<init>", "<clinit>")
 
   def getClassesAndSerializedFields(func: AnyRef): (List[Class[_]], List[String]) = {
 
@@ -65,7 +49,6 @@ object ClassExploration extends Logging {
 
       val fieldObjects = getFieldObjects(obj)
       encounteredSerializedFields ++= fieldObjects.map(f => s"${obj.getClass.getName}||${f.toString}")
-      val method = getMethodObjects(obj)
       val (methodObjects, methods) = getObjectsAndMethods(obj)
       methodsEncountered ++= methods
 
@@ -96,8 +79,6 @@ object ClassExploration extends Logging {
 
     val fields = cls.getDeclaredFields
 
-//    fields.map(x => x.getName).foreach(println)
-
     val nestedObjects = fields
       .filter(_.getName != "serialVersionUID")
       .map(f => {
@@ -108,30 +89,36 @@ object ClassExploration extends Logging {
     nestedObjects.toSet
   }
 
-  def getMethodObjects(func: AnyRef): Set[AnyRef] = {
-    val cls = func.getClass
+//  def getMethodObjects(func: AnyRef): Set[AnyRef] = {
+//    val cls = func.getClass
+//
+//    val methods = cls.getDeclaredMethods
+//
+//    println(methods.size)
+//    methods.map(x => x.toGenericString).foreach(println)
+//    methods.map(m => m.getDeclaringClass).foreach(println)
+//    methods.map(m => m.getName).foreach(println)
+//
+//    methods.map(m => m.toString).foreach(println)
+//
+//
+//    val methodsUsed = getMethodsUsed(func)
+//    println(methodsUsed.size)
+//      methodsUsed.foreach(println)
+//    methods.toSet
+//  }
 
-    val methods = cls.getDeclaredMethods
-
-    println(methods.size)
-    methods.map(x => x.toGenericString).foreach(println)
-    methods.map(m => m.getDeclaringClass).foreach(println)
-    methods.map(m => m.getName).foreach(println)
-
-    methods.map(m => m.toString).foreach(println)
-
-
-    val methodsUsed = getMethodsUsed(func)
-    println(methodsUsed.size)
-      methodsUsed.foreach(println)
-    methods.toSet
-
-//    val nestedMethods = methods
+  def shouldExplore(clz: Class[_]): Boolean = {
+    val name = clz.getName
+    shouldExplore(name)
   }
 
-  def shouldExplore(clz: Class[_]) = {
-    val name = clz.getName
-    !(name.startsWith("java") || name.startsWith("scala"))
+  def shouldExplore(on: OwnerName): Boolean = {
+    shouldExplore(on.owner) && shouldExplore(on.name)
+  }
+
+  def shouldExplore(name: String): Boolean = {
+    !(name.startsWith("java") || name.startsWith("scala") || name.contains("[") || name.contains(";") || EXCLUDED_NAMES.contains(name))
   }
 
   def hasFields(obj: AnyRef) = {
@@ -169,7 +156,8 @@ object ClassExploration extends Logging {
 
       methodsEncountered ++= methods
 
-      toExplore = methods.flatMap(exploreMethod).filter(m => !methodsEncountered.contains(m))
+      toExplore = methods.flatMap(exploreMethod)
+                         .filter( m => shouldExplore(m) && !methodsEncountered.contains(m) )
     }
 
     (objectsEncountered, methodsEncountered)
@@ -188,7 +176,7 @@ object ClassExploration extends Logging {
   def getMethodsUsed(obj: AnyRef): Set[OwnerName] = {
     val reader = getClassReader(obj.getClass)
     val ownerNames = scala.collection.mutable.Set[OwnerName]()
-    reader.accept(new ClassMethodExplorer(APPLYS, ownerNames), 0)
+    reader.accept(new ClassMethodFinder(ownerNames), 0)
     ownerNames.toSet
   }
 
@@ -197,10 +185,11 @@ object ClassExploration extends Logging {
     val moduleCls = Class.forName(ownerName.owner)
     val reader = getClassReader(moduleCls)
     val ownerNames = scala.collection.mutable.Set[OwnerName]()
+    val fieldOwnerNames = scala.collection.mutable.Set[FieldOwnerName]()
 
-    reader.accept(new ClassMethodExplorer(Set(ownerName.name), ownerNames), 0)
+    reader.accept(new ClassMethodExplorer(ownerName.name, ownerNames, fieldOwnerNames), 0)
+
     ownerNames.toSet
-
   }
 
   def cleanClassName(className: String) = {
@@ -208,19 +197,36 @@ object ClassExploration extends Logging {
   }
 
   case class OwnerName(owner: String, name: String)
+  case class FieldOwnerName(owner: String, name: String)
 
-  class ClassMethodExplorer(methodNames: Set[String], ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor(ASM5) {
+  class ClassMethodFinder(ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor(ASM5) {
+
+    override def visitMethod(access: Int,
+                             name: String,
+                             desc: String,
+                             sig: String,
+                             exceptions: Array[String]): MethodVisitor = {
+      logDebug(s"ClassMethodFinder visitMethod: name: $name, desc: $desc")
+      if (name.startsWith("apply")) {
+        new MethodFinder(ownerNames)
+      } else {
+        null
+      }
+    }
+  }
+
+  class ClassMethodExplorer(methodName: String,
+                            ownerNames: scala.collection.mutable.Set[OwnerName],
+                            fieldOwnerNames: scala.collection.mutable.Set[FieldOwnerName]) extends ClassVisitor(ASM5) {
 
     override def visitMethod( access: Int,
                               name: String,
                               desc: String,
                               sig: String,
                               exceptions: Array[String]): MethodVisitor = {
-      logDebug(s"Class visitMethod: name: $name, desc: $desc")
-      if (name.startsWith("apply")) {
-//      if (methodNames.contains(name)) {
-        println("INSIDE VISITMETHOD: " + name)
-        new MethodExplorer(ownerNames)
+      logDebug(s"ClassMethodExplorer visitMethod: name: $name, desc: $desc")
+      if (methodName == name) {
+        new MethodExplorer(ownerNames, fieldOwnerNames)
       } else {
         null
       }
@@ -236,21 +242,27 @@ object ClassExploration extends Logging {
       } else {
         logDebug(s"visitField name: $name, desc: $desc, sig: $sig")
       }
-            new FieldExplorer(ownerNames)
-//      return null
-    }
 
+      new FieldExplorer(ownerNames)
+    }
   }
 
-  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor(ASM5) {
+  class MethodFinder(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor(ASM5) {
+
+    override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean) {
+      ownerNames.add(OwnerName(cleanClassName(owner), name))
+    }
+  }
+
+  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName], fieldOwnerNames: scala.collection.mutable.Set[FieldOwnerName]) extends MethodVisitor(ASM5) {
 
     override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean) {
       ownerNames.add(OwnerName(cleanClassName(owner), name))
     }
 
-//    override def visitFieldInsn(opcode: Int, owner: String, name: String, desc: String) {
-//      ownerNames.add(OwnerName(cleanClassName(owner), name))
-//    }
+    override def visitFieldInsn(opcode: Int, owner: String, name: String, desc: String) {
+      fieldOwnerNames.add(FieldOwnerName(cleanClassName(owner), name))
+    }
   }
 
   class FieldExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends FieldVisitor(ASM5) {
@@ -262,5 +274,4 @@ object ClassExploration extends Logging {
     }
 
   }
-
 }

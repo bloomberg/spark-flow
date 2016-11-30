@@ -18,7 +18,7 @@ object Str { // TODO: changes should affect result
   val str = "moose"
 }
 
-object Func { // TODO: changes should affect result
+object Func {
   val playWithValues = (values: Seq[Int]) => {
     val newValues = values.map(v => Str.str)
     newValues

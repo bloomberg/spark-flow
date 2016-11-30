@@ -37,7 +37,8 @@ class ClassExplorationTest extends FunSuite with ShouldMatchers {
       "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$4",
       "scala.Function1",
       "com.bloomberg.sparkflow.serialization.SomeFunctions$$anonfun$3",
-      "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$2"
+      "com.bloomberg.sparkflow.serialization.ClassExplorationTest$$anonfun$1$$anonfun$2",
+      "scala.runtime.BoxesRunTime"
     )
 
     expected should contain theSameElementsAs classNames
