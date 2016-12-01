@@ -21,6 +21,7 @@ import java.io.File
 import com.bloomberg.sparkflow
 import com.bloomberg.sparkflow._
 import com.bloomberg.sparkflow.dc.Util._
+import com.bloomberg.sparkflow.internal.Logging
 import com.bloomberg.sparkflow.serialization.Hashing._
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.rdd.RDDFunctions._
@@ -36,7 +37,7 @@ import scala.reflect.ClassTag
 /**
   * DistributedCollection, analogous to RDD
   */
-abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Dependency[T](deps) {
+abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Dependency[T](deps) with Logging {
 
   private var dataset: Dataset[T] = _
   private var checkpointed = false
@@ -305,27 +306,6 @@ abstract class DC[T](encoder: Encoder[T], deps: Seq[Dependency[_]]) extends Depe
     new Column(colName)
   }
 
-  def join(right: DC[Row]): DC[Row] = {
-    val f = (left: Dataset[_], right: Dataset[_]) => {
-      left.join(right)
-    }
-    val hashTarget = Seq("join")
-    new MultiDatasetTransformDC(this, right, f, hashTarget)
-  }
-
-  def join(right: DC[Row], usingColumn: String): DC[Row] = join(right, usingColumn)
-
-  def join(right: DC[Row], joinExprs: Column): DC[Row] = join(right, joinExprs, "inner")
-
-  def join(right: DC[Row], joinExprs: Column, joinType: String): DC[Row] = {
-    val f = (left: Dataset[_], right: Dataset[_]) => {
-      left.join(right, joinExprs, joinType)
-    }
-    val hashTarget = Seq("join", joinType, joinExprs.toString())
-    new MultiDatasetTransformDC(this, right, f, hashTarget)
-  }
-
-
   def getRDD(spark: SparkSession): RDD[T] = {
     getDataset(spark).rdd
   }
@@ -508,4 +488,7 @@ object DC {
     new DoubleDCFunctions(dc)
   }
 
+  implicit def dcToDataFrameFunctions(dc: DC[Row]): DataFrameFunctions = {
+    new DataFrameFunctions(dc)
+  }
 }

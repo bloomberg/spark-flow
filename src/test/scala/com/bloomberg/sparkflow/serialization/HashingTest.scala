@@ -16,14 +16,17 @@
 
 package com.bloomberg.sparkflow.serialization
 
-import org.scalatest.FunSuite
+import org.scalatest._
 import com.bloomberg.sparkflow._
+import com.bloomberg.sparkflow.serialization.HashingSample
+import com.bloomberg.sparkflow.serialization.ClassExploration._
 import com.bloomberg.sparkflow.serialization.Hashing._
+import com.holdenkarau.spark.testing.SharedSparkContext
 
 /**
   * Created by ngoehausen on 3/23/16.
   */
-class HashingTest extends FunSuite {
+class HashingTest extends FunSuite with SharedSparkContext with ShouldMatchers{
 
   test("functionHashing"){
     var param = 7
@@ -58,4 +61,16 @@ class HashingTest extends FunSuite {
 
     assert(allSignatures.size == 4)
   }
+
+  test("caseHashing"){
+//    println(s"fieldObjects: ${getFieldObjects(HashingSample.result)}")
+//    println(s"result: ${HashingSample.result.getSignature}")
+   
+   assert(HashingSample.result.getSignature.length > 0)
+  }
+
+
 }
+
+
+

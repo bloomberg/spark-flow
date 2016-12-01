@@ -38,4 +38,30 @@ class DataFrameDCFunctionsTest extends FunSuite with SharedSparkContext with Sho
     expected should contain theSameElementsAs result.getDF(sc).collect()
   }
 
+  test("join") {
+    val left = parallelize(Seq((1,1), (1,2), (2,3), (2,4))).toDF("x","y")
+    val right = parallelize(Seq((1,"a"), (2,"b"))).toDF("x","z")
+    val result = left.join(right)
+
+    val leftDF = left.getDF(sc)
+    val rightDF = right.getDF(sc)
+
+    val resultDF = leftDF.join(rightDF)
+
+    result.getDF(sc).collect() should contain theSameElementsAs resultDF.collect()
+  }
+
+  test("joinColumn") {
+    val left = parallelize(Seq((1,1), (1,2), (2,3), (2,4))).toDF("x","y")
+    val right = parallelize(Seq((1,"a"), (2,"b"))).toDF("x","z")
+    val result = left.join(right, "x")
+
+    val leftDF = left.getDF(sc)
+    val rightDF = right.getDF(sc)
+
+    val resultDF = leftDF.join(rightDF, "x")
+
+    result.getDF(sc).collect() should contain theSameElementsAs resultDF.collect()
+  }
+
 }

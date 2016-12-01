@@ -18,14 +18,16 @@ package com.bloomberg.sparkflow.serialization
 
 import java.security.MessageDigest
 
+import com.bloomberg.sparkflow.internal.Logging
 import com.bloomberg.sparkflow.serialization.ClassExploration.{getClassReader, getClassesAndSerializedFields}
+
 import com.google.common.io.BaseEncoding
 
 
 /**
   * Created by ngoehausen on 3/23/16.
   */
-private[sparkflow] object Hashing {
+private[sparkflow] object Hashing extends Logging {
 
   def hashBytes(bytes: Array[Byte]) = {
     val md5 = MessageDigest.getInstance("MD5").digest(bytes)
@@ -33,7 +35,9 @@ private[sparkflow] object Hashing {
   }
 
   def hashString(s: String) = {
-    hashBytes(s.getBytes())
+    val bytes = hashBytes(s.getBytes())
+    logDebug("string \"" + s + "\" hashed to \"" + bytes + "\"")
+    bytes
   }
 
   def hashSeq[T](seq: Seq[T]) = {
@@ -46,15 +50,14 @@ private[sparkflow] object Hashing {
 
   //TODO: fix hashing on case statement functions
   def hashClass(obj: AnyRef) = {
-
     val (allDepedendentClasses, serializedFields) = getClassesAndSerializedFields(obj)
+
     val combinedHashTarget = allDepedendentClasses
       .map(getClassReader)
       .map(_.b)
       .map(hashBytes) ++ serializedFields
 
     hashSeq(combinedHashTarget)
-
   }
 
 }

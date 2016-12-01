@@ -16,7 +16,10 @@
 
 package com.bloomberg
 
+import java.util.Locale
+
 import com.bloomberg.sparkflow.dc.{DC, ParallelCollectionDC, SourceDC}
+import com.bloomberg.sparkflow.util.Utils
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.{DenseVector, SparseVector, Vector}
 import org.apache.spark.sql.EncoderUtil.encoderFor
@@ -49,10 +52,24 @@ package object sparkflow extends SQLImplicits {
     }
   }
 
+  private val VALID_LOG_LEVELS =
+    Set("ALL", "DEBUG", "ERROR", "FATAL", "INFO", "OFF", "TRACE", "WARN")
+
   private var _spark: SparkSession = null
   private var sqlContext: SQLContext = null
+  private var sparkflowLogLevel: org.apache.log4j.Level = org.apache.log4j.Level.toLevel("WARN")
 
   protected override def _sqlContext: SQLContext = sqlContext
+
+  def setLogLevel(logLevel: String) {
+    // allow lowercase/mixed case
+    val upperCased = logLevel.toUpperCase(Locale.ENGLISH)
+    require(VALID_LOG_LEVELS.contains(upperCased),
+      s"Supplied level $logLevel did not match one of:" +
+        s" ${VALID_LOG_LEVELS.mkString(",")}")
+    sparkflowLogLevel = org.apache.log4j.Level.toLevel(upperCased)
+    Utils.setLogLevel(sparkflowLogLevel)
+  }
 
   private def spark: SparkSession = _spark
 

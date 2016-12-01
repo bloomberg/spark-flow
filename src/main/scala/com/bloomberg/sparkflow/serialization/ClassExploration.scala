@@ -22,13 +22,15 @@ import org.objectweb.asm._
 import scala.reflect.runtime.{universe => ru}
 import scala.util.Try
 
+import com.bloomberg.sparkflow.internal.Logging
+
 /**
   * Created by ngoehausen on 4/11/16.
   */
-object ClassExploration {
+object ClassExploration extends Logging {
 
   val mirror = ru.runtimeMirror(getClass.getClassLoader)
-  val APPLYMC2 = "apply$mcII$sp"
+  val EXCLUDED_NAMES: Set[String] = Set("<init>", "<clinit>")
 
   def getClassesAndSerializedFields(func: AnyRef): (List[Class[_]], List[String]) = {
 
@@ -40,6 +42,8 @@ object ClassExploration {
     while (toExplore.nonEmpty) {
       val obj = toExplore.head
       toExplore = toExplore.tail
+
+      logDebug(s"Exploring ${obj.getClass.getName}")
 
       exploredClasses = exploredClasses + obj.getClass
 
@@ -84,9 +88,17 @@ object ClassExploration {
     nestedObjects.toSet
   }
 
-  def shouldExplore(clz: Class[_]) = {
+  def shouldExplore(clz: Class[_]): Boolean = {
     val name = clz.getName
-    !(name.startsWith("java") || name.startsWith("scala"))
+    shouldExplore(name)
+  }
+
+  def shouldExplore(on: OwnerName): Boolean = {
+    shouldExplore(on.owner) && shouldExplore(on.name)
+  }
+
+  def shouldExplore(name: String): Boolean = {
+    !(name.startsWith("java") || name.startsWith("scala") || name.contains("[") || name.contains(";") || EXCLUDED_NAMES.contains(name))
   }
 
   def hasFields(obj: AnyRef) = {
@@ -112,7 +124,6 @@ object ClassExploration {
     }.toOption.toSet.flatten
 
     while (toExplore.nonEmpty) {
-
       val objects = toExplore.flatMap(ownerName => Try {
         getObjFromModule(ownerName.owner, ownerName.name)
       }.toOption)
@@ -126,7 +137,7 @@ object ClassExploration {
       methodsEncountered ++= methods
 
       toExplore = methods.flatMap(exploreMethod)
-
+                         .filter( m => shouldExplore(m) && !methodsEncountered.contains(m) )
     }
 
     (objectsEncountered, methodsEncountered)
@@ -145,7 +156,7 @@ object ClassExploration {
   def getMethodsUsed(obj: AnyRef): Set[OwnerName] = {
     val reader = getClassReader(obj.getClass)
     val ownerNames = scala.collection.mutable.Set[OwnerName]()
-    reader.accept(new ClassMethodExplorer(APPLYMC2, ownerNames), 0)
+    reader.accept(new ClassMethodFinder(ownerNames), 0)
     ownerNames.toSet
   }
 
@@ -154,10 +165,11 @@ object ClassExploration {
     val moduleCls = Class.forName(ownerName.owner)
     val reader = getClassReader(moduleCls)
     val ownerNames = scala.collection.mutable.Set[OwnerName]()
+    val fieldOwnerNames = scala.collection.mutable.Set[FieldOwnerName]()
 
-    reader.accept(new ClassMethodExplorer(ownerName.name, ownerNames), 0)
+    reader.accept(new ClassMethodExplorer(ownerName.name, ownerNames, fieldOwnerNames), 0)
+
     ownerNames.toSet
-
   }
 
   def cleanClassName(className: String) = {
@@ -165,32 +177,81 @@ object ClassExploration {
   }
 
   case class OwnerName(owner: String, name: String)
+  case class FieldOwnerName(owner: String, name: String)
 
+  class ClassMethodFinder(ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor(ASM5) {
 
-  class ClassMethodExplorer(methodName: String, ownerNames: scala.collection.mutable.Set[OwnerName]) extends ClassVisitor(ASM5) {
+    override def visitMethod(access: Int,
+                             name: String,
+                             desc: String,
+                             sig: String,
+                             exceptions: Array[String]): MethodVisitor = {
+      logDebug(s"ClassMethodFinder visitMethod: name: $name, desc: $desc")
+      if (name.startsWith("apply")) {
+        new MethodFinder(ownerNames)
+      } else {
+        null
+      }
+    }
+  }
 
-    override def visitMethod(
-                              access: Int,
+  class ClassMethodExplorer(methodName: String,
+                            ownerNames: scala.collection.mutable.Set[OwnerName],
+                            fieldOwnerNames: scala.collection.mutable.Set[FieldOwnerName]) extends ClassVisitor(ASM5) {
+
+    override def visitMethod( access: Int,
                               name: String,
                               desc: String,
                               sig: String,
                               exceptions: Array[String]): MethodVisitor = {
-      //      println(s"Class visitMethod: name: $name, desc: $desc")
-      if (name == methodName) {
-        new MethodExplorer(ownerNames)
+      logDebug(s"ClassMethodExplorer visitMethod: name: $name, desc: $desc")
+      if (methodName == name) {
+        new MethodExplorer(ownerNames, fieldOwnerNames)
       } else {
         null
       }
     }
 
+    override def visitField( access: Int,
+                             name: String,
+                             desc: String,
+                             sig: String,
+                             value: Object): FieldVisitor = {
+      if (sig != null && value != null) {
+        logDebug(s"visitField name: $name, desc: $desc, sig: $sig, value: ${value.getClass}: ${value.toString}")
+      } else {
+        logDebug(s"visitField name: $name, desc: $desc, sig: $sig")
+      }
+
+      new FieldExplorer(ownerNames)
+    }
   }
 
-  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor(ASM5) {
+  class MethodFinder(ownerNames: scala.collection.mutable.Set[OwnerName]) extends MethodVisitor(ASM5) {
+
+    override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean) {
+      ownerNames.add(OwnerName(cleanClassName(owner), name))
+    }
+  }
+
+  class MethodExplorer(ownerNames: scala.collection.mutable.Set[OwnerName], fieldOwnerNames: scala.collection.mutable.Set[FieldOwnerName]) extends MethodVisitor(ASM5) {
 
     override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean) {
       ownerNames.add(OwnerName(cleanClassName(owner), name))
     }
 
+    override def visitFieldInsn(opcode: Int, owner: String, name: String, desc: String) {
+      fieldOwnerNames.add(FieldOwnerName(cleanClassName(owner), name))
+    }
   }
 
+  class FieldExplorer(ownerNames: scala.collection.mutable.Set[OwnerName]) extends FieldVisitor(ASM5) {
+
+    if (fv != null) {
+      logDebug(s"FieldExplorer: ${fv.toString}")
+    } else {
+      logDebug("FieldExplorer is null")
+    }
+
+  }
 }

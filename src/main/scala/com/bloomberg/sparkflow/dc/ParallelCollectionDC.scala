@@ -34,7 +34,7 @@ private[sparkflow] class ParallelCollectionDC[T](encoder: Encoder[T], val data: 
   }
 
   override def computeSignature() = {
-    Hashing.hashString(data.map(_.toString).reduce(_ + _))
+    Hashing.hashString(data.map(_.toString).mkString("|"))
   }
 
 
