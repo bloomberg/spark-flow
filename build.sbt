@@ -31,10 +31,3 @@ libraryDependencies ++= Seq(
 run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
 
 parallelExecution in Test := false
-
-publishTo := {
-  val artifactory = "http://artifactory.dev.bloomberg.com:8081/artifactory"
-  if (isSnapshot.value) Some("bloomberg-artifactory-snapshots" at s"$artifactory/libs-snapshot-local")
-  else Some("bloomberg-artifactory-releases" at s"$artifactory/libs-release-local")
-}
-credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
